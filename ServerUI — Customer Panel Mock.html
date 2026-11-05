@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ServerUI — UI Mock (single file)</title>
+<style>
+:root,html[data-theme="dark"]{color-scheme:dark;--background:#1b2430;--foreground:#edf2f7;--topbar-bg:rgba(0,0,0,.28);--topbar-fg:rgba(255,255,255,.92);--app-bg:#1c1c1e;--app-bg-2:#242426;--app-sidebar:#323236;--app-fg:#f2f2f7;--app-title:#fff;--app-muted:#a1a1a6;--app-card:#2c2c2e;--app-input:#3a3a3c;--app-border:rgba(255,255,255,.08);--app-hover:rgba(255,255,255,.06);--window-bg:#1c1c1e;--window-header:#2c2c2e;--window-header-inactive:#252528}
+html[data-theme="light"]{color-scheme:light;--background:#c5d4e4;--foreground:#1d1d1f;--topbar-bg:rgba(255,255,255,.58);--topbar-fg:#1d1d1f;--app-bg:#f4f5f7;--app-bg-2:#eef0f3;--app-sidebar:#6d7278;--app-fg:#1d1d1f;--app-title:#111;--app-muted:#6b7280;--app-card:#fff;--app-input:#fff;--app-border:rgba(0,0,0,.08);--app-hover:rgba(14,165,233,.08);--window-bg:#f6f6f7;--window-header:#ececed;--window-header-inactive:#f3f3f4}
+*{box-sizing:border-box}html,body{height:100%;overflow:hidden;margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--background);color:var(--foreground)}
+button{font-family:inherit;cursor:pointer}.hidden{display:none!important}
+.wallpaper{position:absolute;inset:0;background:radial-gradient(1200px 600px at 50% -10%,#3b5bdb55,transparent),radial-gradient(900px 500px at 80% 110%,#9c36b555,transparent),linear-gradient(180deg,#1a2333 0%,#101720 55%,#07090c 100%)}
+.wallpaper:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.10),transparent 45%),linear-gradient(to bottom,rgba(0,0,0,.35),rgba(0,0,0,.78))}
+/* server selection */
+#screen-servers{position:relative;height:100dvh;width:100%;overflow:auto;color:#fff}
+#screen-servers main{position:relative;margin:0 auto;min-height:100dvh;max-width:920px;display:flex;flex-direction:column;justify-content:center;padding:40px 24px}
+.eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.h1{font-size:32px;font-weight:600;letter-spacing:-.02em;margin:8px 0 0}
+.sub{margin-top:8px;font-size:15px;line-height:1.5;color:rgba(255,255,255,.62);max-width:560px}
+.grid2{margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:22px;padding:20px;backdrop-filter:blur(20px);box-shadow:0 18px 50px rgba(0,0,0,.28);animation:cardIn .22s ease-out}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.scard-top{position:relative;display:flex;flex-direction:column;min-height:118px}
+.dot{position:absolute;right:0;top:0;width:8px;height:8px;border-radius:99px}
+.dot.online{background:#34d399;box-shadow:0 0 10px rgba(52,211,153,.85)}.dot.offline{background:#a1a1aa}.dot.connecting{background:#fcd34d}
+.sname{font-size:17px;font-weight:600;padding-right:24px}.smono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:rgba(255,255,255,.58);margin-top:12px}
+.sstatus{margin-top:auto;padding-top:20px;font-size:12px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.08);display:inline-block}
+.rowbtns{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+.btn-white{background:#fff;color:#18181b;border:0;border-radius:99px;padding:6px 12px;font-size:12px;font-weight:600}
+.btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:99px;padding:6px 12px;font-size:12px}
+.btn-text{background:transparent;border:0;color:rgba(255,255,255,.78);padding:6px 12px;font-size:12px;border-radius:99px}.btn-text:hover{background:rgba(255,255,255,.1);color:#fff}
+.btn-danger{background:transparent;border:0;color:#fda4af;padding:6px 12px;font-size:12px;border-radius:99px}
+.addcard{min-height:154px;border:1.5px dashed rgba(255,255,255,.18);background:rgba(255,255,255,.03);border-radius:22px;color:rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px}
+.addcard:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff}
+.plus{width:40px;height:40px;border-radius:99px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:22px}
+/* boot */
+#screen-boot{position:relative;height:100dvh;display:flex;align-items:center;justify-content:center;background:#07090c;color:#fff;text-align:center}
+#screen-boot .inner{position:relative;max-width:560px;padding:24px;width:100%}
+.steps{margin:32px auto 0;max-width:440px;text-align:left;font-family:ui-monospace,Menlo,monospace;font-size:13px;display:flex;flex-direction:column;gap:8px}
+.steps li{list-style:none;display:flex;gap:12px;transition:opacity .3s;opacity:0}.steps li.show{opacity:1}
+.ok{width:48px;flex-shrink:0;font-size:11px;color:#34d399}
+/* desktop */
+#screen-desktop{position:relative;height:100dvh;width:100%;overflow:hidden}
+header.topbar{position:relative;z-index:50;height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:13px;backdrop-filter:blur(20px);background:var(--topbar-bg);color:var(--topbar-fg)}
+.topbar .right{display:flex;align-items:center;gap:12px;font-size:12px;white-space:nowrap}
+.srvbtn{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:inherit;border-radius:99px;padding:2px 6px;font-weight:600}
+.srvbtn:hover{background:rgba(255,255,255,.1)}
+#serverMenu{position:absolute;right:0;top:calc(100% + 6px);width:240px;background:rgba(22,24,29,.95);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:4px 0;box-shadow:0 18px 50px rgba(0,0,0,.45);text-align:left}
+#serverMenu button{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;color:#fff;font-size:12px;padding:8px 12px}#serverMenu button:hover{background:rgba(255,255,255,.08)}
+.side-label{position:absolute;left:24px;top:48px;z-index:10;color:#fff;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.side-left-bottom{position:absolute;left:24px;bottom:112px;z-index:10;color:rgba(255,255,255,.8);font-size:13px;line-height:1.5;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+#desktopArea{position:absolute;left:0;right:0;top:32px;bottom:0;z-index:20}
+/* windows */
+.win{position:absolute;display:flex;flex-direction:column;overflow:hidden;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);background:var(--window-bg);animation:winIn .14s ease-out;min-width:320px;min-height:200px}
+@keyframes winIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.win.max{inset:0!important;width:auto!important;height:auto!important;border-radius:0}
+.winhead{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--window-header);user-select:none;cursor:grab;font-size:13px;font-weight:600;color:var(--app-title)}
+.winhead .traffic{display:flex;gap:6px}.traffic span{width:12px;height:12px;border-radius:99px;display:inline-block;cursor:pointer}.c-r{background:#ff5f57}.c-y{background:#febc2e}.c-g{background:#28c840}
+.winbody{flex:1;min-height:0;overflow:hidden;background:var(--app-bg);color:var(--app-fg)}
+.win.focused{outline:1px solid rgba(0,0,0,.15)}.win:not(.focused){opacity:.96}
+/* dock */
+nav.dock{position:absolute;left:0;right:0;bottom:12px;z-index:50;display:flex;justify-content:center;pointer-events:none}
+.dockinner{pointer-events:auto;display:flex;align-items:flex-end;gap:10px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:26px;padding:8px 14px;backdrop-filter:blur(24px);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.dockbtn{position:relative;width:52px;background:none;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px}
+.dockbtn svg{width:44px;height:44px;border-radius:13px;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:transform .15s}.dockbtn:hover svg{transform:translateY(-4px)}
+.dockdot{position:absolute;bottom:-2px;width:4px;height:4px;border-radius:99px;background:transparent}.dockdot.open{background:rgba(255,255,255,.55)}.dockdot.focus{background:#fff}
+/* app contents */
+.app{height:100%;overflow:auto;padding:24px}.app h3{margin:8px 0 0;font-size:24px;letter-spacing:-.02em}.muted{color:var(--app-muted)}.metricgrid{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mcard{background:var(--app-card);border:1px solid var(--app-border);border-radius:12px;padding:12px 16px}.mcard b{font-size:24px}
+.term{background:#111;color:#5fff6a;height:100%;display:flex;flex-direction:column;font-family:ui-monospace,Menlo,monospace;font-size:13px}.termbar{display:flex;justify-content:space-between;padding:8px 12px;font-size:11px;color:rgba(255,255,255,.7)}
+.files{display:flex;height:100%}.fside{width:188px;background:#6d7278;color:#fff;font-size:12px;padding:16px 12px;flex-shrink:0}.fside button{display:flex;width:100%;gap:8px;align-items:center;background:none;border:0;color:#fff;border-radius:6px;padding:6px 8px;font-size:12px}.fside button:hover,.fside button.on{background:rgba(255,255,255,.15)}
+.fmain{flex:1;display:flex;flex-direction:column;min-width:0}.fbar{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--app-border);padding:8px 12px;font-size:12px}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;border-bottom:1px solid var(--app-border)}.frow:hover{background:var(--app-hover)}.frow.sel{background:rgba(14,165,233,.16)}
+input.search, input.txt{background:var(--app-input);border:1px solid var(--app-border);color:var(--app-fg);border-radius:8px;padding:6px 10px;font-size:12px;outline:none}
+.toolbarbtn{background:var(--app-card);border:1px solid var(--app-border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--app-fg)}
+.center{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;gap:12px}
+/* modal */
+.modalbg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal{width:100%;max-width:400px;background:#16181d;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px}
+.modal input,.modal select{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);padding:8px 12px;font-size:13px;color:#fff;margin-top:4px}
+.modal label{font-size:12px;color:rgba(255,255,255,.6)}
+#toast{position:absolute;left:50%;top:48px;transform:translateX(-50%);z-index:90;background:rgba(0,0,0,.55);color:#fff;border-radius:99px;padding:6px 16px;font-size:14px;backdrop-filter:blur(10px)}
+kbd{background:var(--app-card);border:1px solid var(--app-border);border-radius:6px;padding:1px 6px;font-size:12px}
+/* resource list/table (VMs, Deployments, Domains) */
+.reslist{display:flex;flex-direction:column;height:100%}
+.resbar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--app-border)}
+.restable{flex:1;overflow:auto}
+.resrow{display:grid;align-items:center;gap:12px;padding:9px 16px;font-size:13px;border-bottom:1px solid var(--app-border)}
+.resrow:hover{background:var(--app-hover)}
+.resrow.head{font-size:11px;color:var(--app-muted);text-transform:uppercase;letter-spacing:.06em;position:sticky;top:0;background:var(--app-bg);z-index:1}
+.rescell-mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 9px;border-radius:99px;background:var(--app-card);border:1px solid var(--app-border)}
+.badge .dot2{width:6px;height:6px;border-radius:99px}
+.badge.b-green{color:#34d399}.badge.b-green .dot2{background:#34d399}
+.badge.b-yellow{color:#fbbf24}.badge.b-yellow .dot2{background:#fbbf24}
+.badge.b-red{color:#f87171}.badge.b-red .dot2{background:#f87171}
+.badge.b-gray{color:var(--app-muted)}.badge.b-gray .dot2{background:var(--app-muted)}
+.badge.b-blue{color:#60a5fa}.badge.b-blue .dot2{background:#60a5fa}
+.loglines{background:#0d0f12;color:#c9d1d9;height:100%;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:10px 12px;white-space:pre-wrap}
+.logline{padding:1px 0}.logline .lvl-error{color:#f87171}.logline .lvl-warn{color:#fbbf24}.logline .lvl-info{color:#60a5fa}.logline .ts{color:#6b7280;margin-right:8px}
+/* VM fleet grid */
+.fleetwrap{height:100%;display:flex;flex-direction:column}
+.fleetgrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px}
+.vmcard{background:var(--app-card);border:1px solid var(--app-border);border-radius:14px;padding:14px}
+.vmcard .vhead{display:flex;justify-content:space-between;align-items:flex-start}
+.vmcard .vname{font-weight:600;font-size:14px}
+.vmcard .vapp{color:var(--app-muted);font-size:12px;margin-top:2px}
+.vmcard .vmeta{margin-top:12px;display:flex;gap:12px;font-size:11px;color:var(--app-muted)}
+.vmcard .vmeta b{color:var(--app-fg);font-weight:600}
+/* settings app - macOS System Settings style */
+.setwrap{display:flex;height:100%}
+.setside{width:190px;flex-shrink:0;background:var(--app-sidebar,var(--app-card));border-right:1px solid var(--app-border);padding:10px 8px;overflow:auto}
+.setsearch{width:100%;background:var(--app-input);border:1px solid var(--app-border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--app-fg);margin-bottom:10px;outline:none}
+.setitem{display:flex;align-items:center;gap:9px;width:100%;background:none;border:0;color:var(--app-fg);border-radius:7px;padding:6px 8px;font-size:13px;text-align:left}
+.setitem:hover{background:var(--app-hover)}
+.setitem.on{background:#0a84ff;color:#fff}
+.seticon{width:22px;height:22px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.setmain{flex:1;overflow:auto;padding:28px 32px}
+.setmain h2{margin:0 0 18px;font-size:22px}
+.setgroup{background:var(--app-card);border:1px solid var(--app-border);border-radius:12px;margin-bottom:18px;overflow:hidden}
+.setrow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;font-size:13px;border-bottom:1px solid var(--app-border)}
+.setrow:last-child{border-bottom:0}
+.setrow .setlbl{color:var(--app-fg)}
+.setrow .setval{color:var(--app-muted);font-size:12px}
+.toggle{width:38px;height:22px;border-radius:99px;background:var(--app-input);position:relative;border:0;cursor:pointer;flex-shrink:0}
+.toggle.on{background:#34c759}
+.toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:99px;background:#fff;transition:left .15s}
+.toggle.on .knob{left:18px}
+</style>
+</head>
+<body>
+<!-- ============ SCREEN 1: SERVER SELECTION ============ -->
+<section id="screen-servers">
+<div class="wallpaper"></div>
+<main>
+<header><p class="eyebrow">ServerUI</p><h1 class="h1" id="serversTitle">Your Servers</h1>
+<p class="sub">Select a machine to open its desktop. Switch servers anytime from the top bar. <b style="font-size:12px;border:1px solid #fff3;padding:2px 8px;border-radius:99px">FAKE MOCK — no backend</b></p></header>
+<div class="grid2" id="serverGrid"></div>
+</main>
+</section>
+
+<!-- ============ SCREEN 2: BOOT ============ -->
+<section id="screen-boot" class="hidden">
+<div class="wallpaper"></div>
+<div class="inner">
+<p class="eyebrow">ServerUI</p>
+<h1 class="h1" id="bootTitle">Connecting</h1>
+<p class="sub" style="text-align:center;margin:12px auto 0" id="bootSub"></p>
+<ol class="steps" id="bootSteps"></ol>
+<p class="sub" style="text-align:center" id="bootFoot">Initializing environment…</p>
+<div style="margin-top:24px;display:flex;gap:12px;justify-content:center"><button class="btn-ghost" onclick="backToServers()">Back to Servers</button></div>
+</div>
+</section>
+
+<!-- ============ SCREEN 3: DESKTOP ============ -->
+<section id="screen-desktop" class="hidden">
+<div class="wallpaper"></div>
+<header class="topbar">
+<span style="font-weight:700">ServerUI</span>
+<div class="right">
+<div style="position:relative;display:flex;align-items:center;gap:6px">
+<span id="topDot" style="width:6px;height:6px;border-radius:99px;background:#34d399;box-shadow:0 0 8px #34d399"></span>
+<button class="srvbtn" onclick="toggleServerMenu(event)"><span id="topName">prod-web-01</span> <span style="opacity:.7">▾</span></button>
+<span class="muted" id="topStatus">Online</span>
+<div id="serverMenu" class="hidden">
+<p style="padding:6px 12px;font-size:10px;letter-spacing:.16em;color:#ffffff66;margin:0">CURRENT SERVER</p>
+<div style="padding:6px 12px;font-size:12px" id="menuCurrent">🖥 prod-web-01</div>
+<div style="height:1px;background:rgba(255,255,255,.08);margin:4px 0"></div>
+<p style="padding:6px 12px;font-size:10px;letter-spacing:.16em;color:#ffffff66;margin:0">SWITCH TO</p>
+<div id="menuOthers"></div>
+<div style="height:1px;background:rgba(255,255,255,.08);margin:4px 0"></div>
+<button onclick="backToServers()">🖥 All servers</button>
+<button onclick="backToServers()">⎋ Leave server</button>
+</div>
+</div>
+<span id="mCpu">CPU 24%</span><span id="mRam">RAM 61%</span><span id="mDisk">Disk 42%</span>
+<button id="themeBtn" onclick="toggleTheme()" style="background:rgba(255,255,255,.12);border:0;color:inherit;border-radius:99px;padding:2px 10px;font-size:12px">◐ Theme</button>
+<time id="clock" style="width:48px;text-align:right">00:00</time>
+</div>
+</header>
+<p class="side-label"><span style="display:block;font-size:28px;font-weight:600">ServerUI</span><span style="font-size:13px">Your servers.<br/>In your browser. (mock)</span></p>
+<p class="side-left-bottom">Control<br/>Deploy<br/>Monitor<br/>From anywhere.</p>
+<div id="desktopArea"></div>
+<nav class="dock"><div class="dockinner" id="dock"></div></nav>
+<div id="toast" class="hidden">Coming soon</div>
+</section>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ---------- fake data (mirrors src/lib/servers.ts + apps.ts) ---------- */
+const SERVERS=[
+{id:"srv-prod",name:"prod-web-01",hostname:"prod-web-01",address:"203.0.113.10",username:"deploy",sshPort:22,status:"online"},
+{id:"srv-stage",name:"staging-01",hostname:"staging-01",address:"203.0.113.20",username:"deploy",sshPort:2222,status:"offline"}];
+const APPS=[
+{id:"dashboard",title:"Dashboard",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1e7dff"/><rect x="18" y="18" width="28" height="28" rx="7" fill="#fff"/><rect x="54" y="18" width="28" height="28" rx="7" fill="#fff"/><rect x="18" y="54" width="28" height="28" rx="7" fill="#fff"/><rect x="54" y="54" width="28" height="28" rx="7" fill="#fff"/></svg>'},
+{id:"files",title:"Files",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#e8f7ff"/><path d="M18 32c0-4 4-8 8-8h18l8 8h22c4 0 8 4 8 8v6H18z" fill="#4bb8f0"/><rect x="14" y="38" width="72" height="46" rx="10" fill="#1f8fd4"/></svg>'},
+{id:"terminal",title:"Terminal",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#111"/><path d="M24 32l22 18-22 18" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M52 68h24" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>'},
+{id:"vms",title:"VMs",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#16a34a"/><rect x="20" y="26" width="60" height="38" rx="6" fill="#fff"/><rect x="34" y="70" width="32" height="6" rx="3" fill="#fff"/><circle cx="30" cy="36" r="3" fill="#16a34a"/><circle cx="40" cy="36" r="3" fill="#16a34a"/></svg>'},
+{id:"deployments",title:"Deployments",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#7c3aed"/><path d="M50 20l24 14v32l-24 14-24-14V34z" fill="none" stroke="#fff" stroke-width="5"/><path d="M50 20v28M50 48l24-14M50 48l-24-14" stroke="#fff" stroke-width="5" fill="none"/></svg>'},
+{id:"logs",title:"Logs",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1f2937"/><rect x="24" y="26" width="52" height="6" rx="3" fill="#34d399"/><rect x="24" y="42" width="52" height="6" rx="3" fill="#9ca3af"/><rect x="24" y="58" width="34" height="6" rx="3" fill="#f87171"/></svg>'},
+{id:"settings",title:"Settings",avail:true,icon:'<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#9ca3af"/><circle cx="50" cy="50" r="20" fill="#4b5563"/><circle cx="50" cy="50" r="8" fill="#e5e7eb"/></svg>'}];
+const FILES={"/":{"/etc":{t:"dir"},"/home":{t:"dir"},"/var":{t:"dir"},"README.md":{t:"file",s:"2.1 KB"},"docker-compose.yml":{t:"file",s:"1.4 KB"},"deploy.sh":{t:"file",s:"860 B"}},"/etc":{"nginx":{t:"dir"},"ssh":{t:"dir"},"hosts":{t:"file",s:"220 B"}},"/home":{"deploy":{t:"dir"}},"/home/deploy":{"app":{t:"dir"},".bashrc":{t:"file",s:"3 KB"}},"/var":{"log":{t:"dir"},"www":{t:"dir"}},"/tmp":{}};
+const VMS=[
+{id:"vm-1",name:"web-01",app:"api-gateway",state:"Running",cpu:1,mem:512,ip:"10.0.4.11",created:"3d ago"},
+{id:"vm-2",name:"web-02",app:"api-gateway",state:"Running",cpu:1,mem:512,ip:"10.0.4.12",created:"3d ago"},
+{id:"vm-3",name:"web-03",app:"api-gateway",state:"Running",cpu:1,mem:512,ip:"10.0.4.13",created:"3d ago"},
+{id:"vm-4",name:"worker-01",app:"job-worker",state:"Degraded",cpu:2,mem:1024,ip:"10.0.4.20",created:"9d ago"},
+{id:"vm-5",name:"worker-02",app:"job-worker",state:"Running",cpu:2,mem:1024,ip:"10.0.4.21",created:"9d ago"},
+{id:"vm-6",name:"worker-03",app:"job-worker",state:"Running",cpu:2,mem:1024,ip:"10.0.4.22",created:"7d ago"},
+{id:"vm-7",name:"cache-01",app:"redis-cache",state:"Stopped",cpu:1,mem:256,ip:"10.0.4.30",created:"14d ago"},
+{id:"vm-8",name:"cache-02",app:"redis-cache",state:"Running",cpu:1,mem:256,ip:"10.0.4.31",created:"14d ago"},
+{id:"vm-9",name:"db-primary",app:"postgres",state:"Running",cpu:4,mem:4096,ip:"10.0.4.40",created:"30d ago"},
+{id:"vm-10",name:"db-replica",app:"postgres",state:"Running",cpu:2,mem:2048,ip:"10.0.4.41",created:"30d ago"},
+{id:"vm-11",name:"frontend-01",app:"web-frontend",state:"Running",cpu:1,mem:512,ip:"10.0.4.50",created:"5d ago"},
+{id:"vm-12",name:"build-runner-01",app:"buildkit",state:"Provisioning",cpu:2,mem:2048,ip:"—",created:"just now"}];
+const DEPLOYMENTS=[
+{id:"dep-1",service:"api-gateway",commit:"a53c162",branch:"main",state:"Succeeded",when:"12m ago"},
+{id:"dep-2",service:"job-worker",commit:"7f0e912",branch:"main",state:"NeedsAttention",when:"1h ago"},
+{id:"dep-3",service:"web-frontend",commit:"3c88ab1",branch:"release/1.2",state:"Running",when:"2h ago"},
+{id:"dep-4",service:"redis-cache",commit:"—",branch:"—",state:"Cancelled",when:"1d ago"},
+{id:"dep-5",service:"api-gateway",commit:"9b2d004",branch:"main",state:"Failed",when:"1d ago"}];
+const DOMAINS=[
+{id:"dom-1",host:"app.example.com",target:"web-frontend",tls:"Active",dns:"Verified"},
+{id:"dom-2",host:"api.example.com",target:"api-gateway",tls:"Active",dns:"Verified"},
+{id:"dom-3",host:"staging.example.com",target:"web-frontend",tls:"Pending",dns:"Verifying"},
+{id:"dom-4",host:"old.example.com",target:"—",tls:"Expired",dns:"Failed"}];
+const LOGLEVELS={info:"lvl-info",warn:"lvl-warn",error:"lvl-error"};
+const LOGS=[
+["12:04:01","info","api-gateway","request completed method=GET path=/health status=200"],
+["12:04:03","info","job-worker","picked up job id=8841 queue=emails"],
+["12:04:05","warn","job-worker","retry 2/5 job id=8841 reason=smtp timeout"],
+["12:04:07","info","api-gateway","request completed method=POST path=/deploy status=201"],
+["12:04:09","error","redis-cache","connection refused 10.0.4.30:6379"],
+["12:04:10","info","buildkit","build started ref=main sha=a53c162"],
+["12:04:22","info","buildkit","build succeeded duration=12.4s"],
+["12:04:25","warn","api-gateway","rate limit approaching client=203.0.113.44"],
+["12:04:30","info","api-gateway","request completed method=GET path=/metrics status=200"],
+["12:04:41","error","job-worker","job failed id=8840 reason=unhandled exception"]];
+let current=SERVERS[0], wins=[], z=10, winSeq=0;
+const $=id=>document.getElementById(id);
+
+/* ---------- server selection ---------- */
+function renderServers(){
+const g=$("serverGrid");g.innerHTML="";
+SERVERS.forEach(s=>{
+const d=document.createElement("div");d.className="card";
+d.innerHTML=`<div class="scard-top"><span class="dot ${s.status}"></span>
+<p class="sname">${s.name}</p><p class="smono">${s.hostname}</p>
+<p class="smono" style="margin-top:4px">${s.username}@${s.address}${s.sshPort!==22?":"+s.sshPort:""}</p>
+<div><span class="sstatus">${s.status}</span></div></div>
+<div class="rowbtns"><button class="btn-white" data-c="${s.id}">Connect</button>
+<button class="btn-ghost" data-t="${s.id}">Test Connection</button>
+<button class="btn-text" data-e="${s.id}">Edit</button>
+<button class="btn-danger" data-d="${s.id}">Delete</button></div>
+<p class="smono" data-msg="${s.id}" style="margin-top:8px"></p>`;
+g.appendChild(d);});
+g.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>connect(SERVERS.find(x=>x.id===b.dataset.c)));
+g.querySelectorAll("[data-t]").forEach(b=>b.onclick=e=>{const m=document.querySelector(`[data-msg="${b.dataset.t}"]`);m.textContent="Connecting…";setTimeout(()=>m.textContent="✓ OK · 42ms · SSH reachable (mock)",900);});
+g.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>openModal(SERVERS.find(x=>x.id===b.dataset.e)));
+g.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{if(confirm("Delete server? (mock)")){const i=SERVERS.findIndex(x=>x.id===b.dataset.d);SERVERS.splice(i,1);renderServers();}});
+const add=document.createElement("button");add.className="addcard";add.style.gridColumn="1 / -1";
+add.innerHTML='<span class="plus">+</span><span style="font-size:14px;font-weight:600">Add Server</span><span style="font-size:12px">host, SSH port, username, password or private key</span>';
+add.onclick=()=>openModal(null);g.appendChild(add);
+}
+function openModal(s){
+$("modalRoot").innerHTML=`<div class="modalbg" onclick="if(event.target===this)closeModal()"><div class="modal">
+<h3 style="margin:0">${s?"Edit":"Add"} Server</h3>
+<div style="display:grid;gap:10px;margin-top:12px">
+<label>Name<input id="fName" value="${s?s.name:""}"/></label>
+<label>Host / address<input id="fAddr" value="${s?s.address:""}"/></label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>SSH port<input id="fPort" value="${s?s.sshPort:22}"/></label><label>Username<input id="fUser" value="${s?s.username:"deploy"}"/></label></div>
+<label>Auth<select id="fAuth"><option>password</option><option>private_key</option></select></label>
+<label>Password / key<input type="password" placeholder="never stored in mock"/></label>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn-text" onclick="closeModal()">Cancel</button><button class="btn-white" onclick="saveModal('${s?s.id:""}')">Save</button></div></div></div>`;
+}
+function closeModal(){$("modalRoot").innerHTML="";}
+function saveModal(id){const n=$("fName").value||"my-server",a=$("fAddr").value||"203.0.113.99";
+if(id){const s=SERVERS.find(x=>x.id===id);s.name=n;s.address=a;}else SERVERS.push({id:"srv-"+Date.now(),name:n,hostname:n,address:a,username:$("fUser").value||"deploy",sshPort:+$("fPort").value||22,status:"offline"});
+closeModal();renderServers();}
+
+/* ---------- boot ---------- */
+const STEPS=["Connecting to server","Resolving server","Establishing SSH connection","Authenticating","Checking server environment","Loading filesystem","Starting ServerUI session"];
+function connect(s){current=s;$("screen-servers").classList.add("hidden");$("screen-desktop").classList.add("hidden");$("screen-boot").classList.remove("hidden");
+$("bootTitle").textContent="Connecting to "+s.name;$("bootSub").textContent=s.name;
+$("bootSub").insertAdjacentHTML("afterend","");const ol=$("bootSteps");ol.innerHTML=STEPS.map((t,i)=>`<li id="st${i}"><span class="ok">[ OK ]</span><span>${i===0?"Connecting to "+s.name:t}</span></li>`).join("");
+STEPS.forEach((_,i)=>setTimeout(()=>$("st"+i).classList.add("show"),180*i));
+setTimeout(()=>{$("bootFoot").textContent="Welcome to ServerUI";enterDesktop();},180*STEPS.length+400);}
+function backToServers(){$("screen-boot").classList.add("hidden");$("screen-desktop").classList.add("hidden");$("screen-servers").classList.remove("hidden");wins=[];renderDesktop();renderServers();}
+
+/* ---------- desktop ---------- */
+function enterDesktop(){$("screen-boot").classList.add("hidden");$("screen-desktop").classList.remove("hidden");
+$("topName").textContent=current.name;$("menuCurrent").textContent="🖥 "+current.name;
+$("menuOthers").innerHTML=SERVERS.filter(x=>x.id!==current.id).map(x=>`<button onclick="switchSrv('${x.id}')">⇄ ${x.name}</button>`).join("");
+wins=[];renderDock();openApp("dashboard");openApp("files");}
+function switchSrv(id){current=SERVERS.find(x=>x.id===id);$("serverMenu").classList.add("hidden");connect(current);}
+function toggleServerMenu(e){e.stopPropagation();$("serverMenu").classList.toggle("hidden");}
+document.addEventListener("click",e=>{if(!$("serverMenu").classList.contains("hidden")&&!e.target.closest("#serverMenu"))$("serverMenu").classList.add("hidden");});
+setInterval(()=>{const d=new Date();$("clock").textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");},1000);
+setInterval(()=>{if(!$("screen-desktop").classList.contains("hidden")){$("mCpu").textContent="CPU "+(18+Math.round(Math.random()*20))+"%";$("mRam").textContent="RAM "+(55+Math.round(Math.random()*12))+"%";}},3000);
+function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.dataset.theme==="dark"?"light":"dark";}
+function toast(){$("toast").classList.remove("hidden");setTimeout(()=>$("toast").classList.add("hidden"),1600);}
+function renderDock(){const d=$("dock");d.innerHTML=APPS.map(a=>{const o=wins.find(w=>w.app===a.id&&!w.min);const any=wins.find(w=>w.app===a.id);
+return `<button class="dockbtn" title="${a.title}" onclick="dockClick('${a.id}')">${a.icon}<span>${a.title}</span><span class="dockdot ${o?"focus":any?"open":""}"></span></button>`;}).join("")
++'<span style="width:1px;height:36px;background:rgba(255,255,255,.25);margin-bottom:24px"></span><button class="dockbtn" onclick="toast()"><svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#f3f4f6"/><path d="M26 32h48l-4 50H30z" fill="#d1d5db"/></svg><span>Trash</span></button>';}
+function dockClick(id){const a=APPS.find(x=>x.id===id);if(!a.avail){toast();openComing(id);return;}const ex=wins.find(w=>w.app===id);
+if(!ex)openApp(id);else if(ex.min){ex.min=false;}else{focusWin(ex.winId);}renderDesktop();}
+const COMINGTITLES={editor:"Editor",applications:"Applications",databases:"Databases"};
+function openComing(id){const t=(APPS.find(x=>x.id===id)||{}).title||COMINGTITLES[id]||id;openWin(id,t+' — Coming soon',480,420,comingHTML(t));}
+function comingHTML(t){return `<div class="center"><p class="muted" style="font-size:11px;letter-spacing:.2em">SERVERUI</p><h3>${t}</h3><p class="muted" style="max-width:340px;font-size:14px">Coming soon. Dashboard, Terminal, and Files operate against the selected server; Editor and everything else lands in a later phase.</p><p class="muted" style="font-size:12px">Current server: ${current.name}</p></div>`;}
+const SIZE={dashboard:[900,600],files:[860,600],terminal:[800,480],settings:[820,540],about:[440,380],viewer:[700,480],vms:[980,620],deployments:[860,560],domains:[780,520],logs:[820,520]};
+function openApp(app){const meta=APPS.find(a=>a.id===app)||{title:app};const titles={dashboard:"Dashboard — "+current.name,files:"Files — /home/"+(current.username||"deploy"),terminal:"Terminal — "+current.address,settings:"Settings",vms:"VMs — "+current.name,deployments:"Deployments — "+current.name,domains:"Domains — "+current.name,logs:"Logs — "+current.name};const s=SIZE[app]||[720,480];
+openWin(app,titles[app]||meta.title,s[0],s[1],appHTML(app));}
+function appHTML(app){
+if(app==="dashboard")return `<div class="app"><p class="muted" style="font-size:11px;letter-spacing:.2em">SERVERUI</p><div style="display:flex;align-items:center;gap:8px"><h3>${current.name}</h3><span style="width:8px;height:8px;border-radius:99px;background:#10b981"></span><span class="muted" style="font-size:14px">Online</span><button class="toolbarbtn" style="margin-left:auto" onclick="toast()">Refresh</button></div>
+<p class="muted" style="font-size:14px">Connected over SSH. (mock metrics)</p><p class="muted" style="font-size:12px">${current.username}@${current.address} · ${current.hostname}</p><p class="muted" style="font-size:12px">Last updated: just now</p>
+<div class="metricgrid"><div class="mcard"><div class="muted" style="font-size:11px">CPU</div><b>24%</b></div><div class="mcard"><div class="muted" style="font-size:11px">RAM</div><b>61%</b></div><div class="mcard"><div class="muted" style="font-size:11px">DISK</div><b>42%</b></div><div class="mcard"><div class="muted" style="font-size:11px">UPTIME</div><b>12d 4h 31m</b></div></div></div>`;
+if(app==="files")return filesHTML("/");
+if(app==="terminal")return `<div class="term"><div class="termbar"><span>Connected to ${current.name} (mock PTY)</span><button class="toolbarbtn" style="background:#ffffff22;color:#fff;border:0" onclick="termPrint(this)">⏎ Run demo</button></div><div id="termOut" style="flex:1;padding:8px 12px;overflow:auto;white-space:pre-wrap">deploy@${current.hostname}:~$ <span style="color:#fff">uptime</span>\n 14:02:11 up 12 days, load average: 0.24, 0.18, 0.12\ndeploy@${current.hostname}:~$ <span id="caret">▊</span></div><div style="display:flex;border-top:1px solid #ffffff22"><input id="termIn" placeholder="type a fake command + Enter" style="flex:1;background:transparent;border:0;color:#5fff6a;padding:10px 12px;outline:none;font-family:monospace" onkeydown="if(event.key==='Enter'){termCmd(this)}"/></div></div>`;
+if(app==="settings")return settingsHTML();
+if(app==="about")return aboutHTML();
+if(app==="vms")return vmsHTML();
+if(app==="deployments")return deploymentsHTML();
+if(app==="domains")return domainsHTML();
+if(app==="logs")return logsHTML();
+return comingHTML(app);}
+/* settings - macOS System Settings style */
+let setSection="general";
+const SETSECTIONS=[
+{id:"general",label:"General",icon:"⚙️",bg:"#8e8e93"},
+{id:"account",label:"Account",icon:"👤",bg:"#0a84ff"},
+{id:"notifications",label:"Notifications",icon:"🔔",bg:"#ff453a"},
+{id:"manage",label:"Manage",icon:"🧩",bg:"#ff9f0a"},
+{id:"security",label:"Security",icon:"🛡️",bg:"#34c759"},
+{id:"keyboard",label:"Keyboard",icon:"⌨️",bg:"#5e5ce6"},
+{id:"about",label:"About",icon:"ℹ️",bg:"#8e8e93"}];
+function tgl(id){const s=$(id);s.classList.toggle("on");}
+function setSetSection(id){setSection=id;const w=wins.find(w=>w.app==="settings"&&!w.min);if(w){w.html=settingsHTML();renderDesktop();}}
+function settingsPane(){
+if(setSection==="general")return `<h2>General</h2>
+<div class="setgroup"><div class="setrow"><span class="setlbl">Application</span><span class="setval">ServerUI</span></div>
+<div class="setrow"><span class="setlbl">Version</span><span class="setval">mock-1.0</span></div>
+<div class="setrow"><span class="setlbl">License</span><span class="setval">Open source</span></div></div>
+<div class="setgroup"><div class="setrow"><span class="setlbl">Mode</span><span class="setval">Web (mock)</span></div>
+<div class="setrow"><span class="setlbl">Backend</span><span class="setval">fake-local</span></div>
+<div class="setrow"><span class="setlbl">Active server</span><span class="setval">${current.name}</span></div></div>
+<div class="setgroup"><div class="setrow"><span class="setlbl">Appearance</span><button class="toolbarbtn" onclick="toggleTheme()">◐ Toggle dark/light</button></div></div>`;
+if(setSection==="account")return `<h2>Account</h2>
+<div class="setgroup"><div class="setrow"><span class="setlbl">Signed in as</span><span class="setval">${current.username}@${current.address}</span></div>
+<div class="setrow"><span class="setlbl">Role</span><span class="setval">Developer</span></div>
+<div class="setrow"><span class="setlbl">Sign out</span><button class="toolbarbtn" onclick="backToServers()">Sign out</button></div></div>`;
+if(setSection==="notifications")return `<h2>Notifications</h2>
+<div class="setgroup">
+<div class="setrow"><span class="setlbl">Deployment failures</span><button class="toggle on" id="tglDeployFail" onclick="tgl('tglDeployFail')"><span class="knob"></span></button></div>
+<div class="setrow"><span class="setlbl">VM state changes</span><button class="toggle on" id="tglVmState" onclick="tgl('tglVmState')"><span class="knob"></span></button></div>
+<div class="setrow"><span class="setlbl">Weekly usage summary</span><button class="toggle" id="tglWeekly" onclick="tgl('tglWeekly')"><span class="knob"></span></button></div></div>`;
+if(setSection==="manage")return `<h2>Manage</h2><p class="muted" style="font-size:13px;margin:-10px 0 16px">Less-used tools, tucked away.</p>
+<div class="setgroup">
+<div class="setrow"><span class="setlbl">🌐 Domains</span><button class="toolbarbtn" onclick="openApp('domains')">Open</button></div>
+<div class="setrow"><span class="setlbl">🗄 Databases</span><button class="toolbarbtn" onclick="openComing('databases')">Open</button></div>
+<div class="setrow"><span class="setlbl">&lt;/&gt; Editor</span><button class="toolbarbtn" onclick="openComing('editor')">Open</button></div>
+<div class="setrow"><span class="setlbl">▦ Applications</span><button class="toolbarbtn" onclick="openComing('applications')">Open</button></div></div>`;
+if(setSection==="security")return `<h2>Security</h2>
+<div class="setgroup"><div class="setrow"><span class="setlbl">SSH/SFTP/terminal transport</span><span class="setval">Go backend only</span></div>
+<div class="setrow"><span class="setlbl">UI dials SSH directly</span><span class="setval">Never</span></div>
+<div class="setrow"><span class="setlbl">Secrets in UI</span><span class="setval">Never shown</span></div></div>`;
+if(setSection==="keyboard")return `<h2>Keyboard</h2>
+<div class="setgroup"><div class="setrow"><span class="setlbl">Server menu</span><kbd>⌘/Ctrl</kbd>+<kbd>K</kbd></div>
+<div class="setrow"><span class="setlbl">Settings</span><kbd>⌘/Ctrl</kbd>+<kbd>,</kbd></div>
+<div class="setrow"><span class="setlbl">Close window</span><kbd>⌘/Ctrl</kbd>+<kbd>W</kbd></div>
+<div class="setrow"><span class="setlbl">Clear focus</span><kbd>Esc</kbd></div></div>`;
+if(setSection==="about")return `<h2>About</h2>
+<div class="setgroup"><div class="setrow"><span class="setlbl">ServerUI</span><span class="setval">mock-1.0</span></div>
+<div class="setrow"><span class="setlbl">Contact</span><span class="setval">contact@skyrekon.com</span></div></div>
+<button class="toolbarbtn" onclick="openWin('about','About ServerUI',440,380,aboutHTML())">Open About window</button>`;
+return "";}
+function settingsHTML(){const items=SETSECTIONS.map(s=>`<button class="setitem ${setSection===s.id?"on":""}" onclick="setSetSection('${s.id}')"><span class="seticon" style="background:${s.bg}">${s.icon}</span>${s.label}</button>`).join("");
+return `<div class="setwrap"><div class="setside"><input class="setsearch" placeholder="🔍 Search"/>${items}</div><div class="setmain">${settingsPane()}</div></div>`;}
+/* vms */
+function vmBadge(state){const m={Running:"b-green",Degraded:"b-yellow",Stopped:"b-gray",Provisioning:"b-blue",Failed:"b-red"};return `<span class="badge ${m[state]||"b-gray"}"><span class="dot2"></span>${state}</span>`;}
+function vmsHTML(){const running=VMS.filter(v=>v.state==="Running").length,issues=VMS.filter(v=>v.state==="Degraded"||v.state==="Failed").length;
+const cards=VMS.map(v=>`<div class="vmcard"><div class="vhead"><div><div class="vname">${v.name}</div><div class="vapp">${v.app}</div></div>${vmBadge(v.state)}</div>
+<div class="vmeta"><span><b>${v.cpu}</b> vCPU</span><span><b>${v.mem}</b> MB</span><span>${v.ip}</span></div>
+<div class="vmeta" style="margin-top:4px"><span>${v.created}</span></div></div>`).join("");
+return `<div class="fleetwrap"><div class="resbar"><b style="font-size:14px">Fleet</b><span class="muted" style="font-size:12px">${VMS.length} VMs · ${running} running${issues?" · "+issues+" need attention":""}</span><button class="toolbarbtn" style="margin-left:auto" onclick="toast()">+ New VM</button><button class="toolbarbtn" onclick="toast()">Refresh</button></div>
+<div class="fleetgrid">${cards}</div></div>`;}
+/* deployments */
+function depBadge(state){const m={Succeeded:"b-green",Running:"b-blue",NeedsAttention:"b-yellow",Failed:"b-red",Cancelled:"b-gray"};return `<span class="badge ${m[state]||"b-gray"}"><span class="dot2"></span>${state}</span>`;}
+function deploymentsHTML(){const rows=DEPLOYMENTS.map(d=>`<div class="resrow" style="grid-template-columns:1.3fr 1fr 1fr 1.1fr 1fr .8fr">
+<span>${d.service}</span><span class="rescell-mono">${d.commit}</span><span class="muted">${d.branch}</span>${depBadge(d.state)}<span class="muted">${d.when}</span><button class="toolbarbtn" onclick="toast()">Logs</button></div>`).join("");
+return `<div class="reslist"><div class="resbar"><b style="font-size:14px">Deployments</b><span class="muted" style="font-size:12px">${DEPLOYMENTS.length} total</span><button class="toolbarbtn" style="margin-left:auto" onclick="toast()">+ Deploy</button></div>
+<div class="restable"><div class="resrow head" style="grid-template-columns:1.3fr 1fr 1fr 1.1fr 1fr .8fr"><span>Service</span><span>Commit</span><span>Branch</span><span>State</span><span>When</span><span></span></div>${rows}</div></div>`;}
+/* domains */
+function tlsBadge(s){const m={Active:"b-green",Pending:"b-yellow",Expired:"b-red"};return `<span class="badge ${m[s]||"b-gray"}"><span class="dot2"></span>${s}</span>`;}
+function dnsBadge(s){const m={Verified:"b-green",Verifying:"b-yellow",Failed:"b-red"};return `<span class="badge ${m[s]||"b-gray"}"><span class="dot2"></span>${s}</span>`;}
+function domainsHTML(){const rows=DOMAINS.map(d=>`<div class="resrow" style="grid-template-columns:1.4fr 1.1fr .9fr .9fr .8fr">
+<span class="rescell-mono">${d.host}</span><span class="muted">${d.target}</span>${tlsBadge(d.tls)}${dnsBadge(d.dns)}<button class="toolbarbtn" onclick="toast()">Manage</button></div>`).join("");
+return `<div class="reslist"><div class="resbar"><b style="font-size:14px">Domains</b><span class="muted" style="font-size:12px">${DOMAINS.length} total</span><button class="toolbarbtn" style="margin-left:auto" onclick="toast()">+ Add domain</button></div>
+<div class="restable"><div class="resrow head" style="grid-template-columns:1.4fr 1.1fr .9fr .9fr .8fr"><span>Domain</span><span>Target</span><span>TLS</span><span>DNS</span><span></span></div>${rows}</div></div>`;}
+/* logs */
+function logsHTML(){const lines=LOGS.map(([ts,lvl,svc,msg])=>`<div class="logline"><span class="ts">${ts}</span><span class="${LOGLEVELS[lvl]}">[${lvl}]</span> <b>${svc}</b> ${msg}</div>`).join("");
+return `<div class="reslist"><div class="resbar"><b style="font-size:14px">Logs</b><span class="muted" style="font-size:12px">all services</span><input class="search" style="margin-left:auto;width:160px" placeholder="Filter"/><button class="toolbarbtn" onclick="toast()">⏸ Pause</button></div>
+<div class="loglines">${lines}</div></div>`;}
+function aboutHTML(){return `<div class="center"><p class="muted" style="font-size:11px;letter-spacing:.2em">SERVERUI</p><h3>About ServerUI</h3><p class="muted">A modern, open-source control panel for managing servers from the browser. (mock)</p><p class="muted">Contact <u>contact@skyrekon.com</u></p></div>`;}
+/* files mock */
+let fpath="/", fquery="";
+function filesHTML(p){fpath=p;const entries=Object.entries(FILES[p]||{}).map(([n,v])=>({n,...v}));
+const vis=entries.filter(e=>e.n.toLowerCase().includes(fquery.toLowerCase()));
+const rows=vis.map(e=>`<div class="frow" ondblclick="navFile('${e.n}')"><span>${e.t==="dir"?"📁":"📄"}</span><span style="flex:1">${e.n}</span><span class="muted">${e.s||"—"}</span></div>`).join("")||'<div class="center muted">This folder is empty</div>';
+return `<div class="files"><div class="fside"><p style="font-size:10px;letter-spacing:.15em;opacity:.6">FAVORITES</p>
+${[["Root","/"],["Home","/home/deploy"],["tmp","/tmp"],["etc","/etc"],["var","/var"]].map(([l,pa])=>`<button class="${p===pa?"on":""}" onclick="refreshFiles('${pa}')">🏠 ${l}</button>`).join("")}</div>
+<div class="fmain"><div class="fbar"><button class="toolbarbtn" onclick="refreshFiles('/')">‹</button><button class="toolbarbtn" onclick="toast()">›</button><button class="toolbarbtn" onclick="refreshFiles('/home/deploy')">⌂</button><span class="muted" style="font-family:monospace">${p}</span><input class="search" style="margin-left:auto;width:140px" placeholder="Search" value="${fquery}" oninput="fquery=this.value;refreshFiles('${p}')"/></div>
+<div class="fbar"><button class="toolbarbtn" onclick="toast()">New file</button><button class="toolbarbtn" onclick="toast()">New folder</button><button class="toolbarbtn" onclick="toast()">Upload</button><button class="toolbarbtn" onclick="toast()">Rename</button></div>
+<div style="flex:1;overflow:auto">${rows}</div><div class="fbar muted" style="justify-content:space-between"><span>${vis.length} items</span><span>mock SFTP · double-click folder to enter</span></div></div></div>`;}
+function refreshFiles(p){fquery=document.querySelector(".files .search")?.value??fquery;const w=wins.find(w=>w.app==="files"&&!w.min);if(w){w.html=filesHTML(p);renderDesktop();}}
+function navFile(n){const base=fpath==="/"?"":fpath;const full=base+"/"+n;const ent=(FILES[fpath]||{})[n];if(ent&&ent.t==="dir"){refreshFiles(FILES[full]?full:fpath);}else{openWin("viewer","Viewer — "+n,700,480,`<div class="app"><p class="muted">FILE VIEWER (mock)</p><h3>${n}</h3><pre style="background:var(--app-card);border:1px solid var(--app-border);border-radius:8px;padding:12px;font-size:12px">hello from ${current.name}\n# fake preview of ${full}\nuptime: 12 days\n</pre></div>`);}}
+function termCmd(el){const out=document.getElementById("termOut");out.innerHTML+=el.value+"\n<span class='muted'>mock:</span> executed `"+el.value+"` on "+current.address+"\ndeploy@"+current.hostname+":~$ <span id='caret'>▊</span>";el.value="";out.scrollTop=out.scrollHeight;}
+function termPrint(btn){const out=btn.closest(".term").querySelector("#termOut");out.innerHTML+="htop  (mock)  CPU 24%  MEM 61%\n";}
+/* windowing */
+function openWin(app,title,w,h,html){winSeq++;const id="w"+winSeq;const off=(winSeq%6)*28;
+wins.push({winId:id,app,title,width:Math.min(w,innerWidth-40),height:Math.min(h,innerHeight-120),x:60+off,y:50+off,min:false,max:false,html});focusWin(id);renderDesktop();}
+function focusWin(id){wins.forEach(w=>w.z=(w.winId===id)?++z:w.z||1);renderDesktop();}
+function renderDesktop(){const a=$("desktopArea");a.innerHTML="";wins.filter(w=>!w.min).forEach(w=>{
+const el=document.createElement("article");el.className="win"+(w.max?" max":"")+((w.z>=z)?" focused":"");el.style.cssText=w.max?`z-index:${w.z}`:`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px;z-index:${w.z}`;
+el.innerHTML=`<div class="winhead" data-drag="${w.winId}"><span class="traffic"><span class="c-r" data-act="close" data-id="${w.winId}"></span><span class="c-y" data-act="min" data-id="${w.winId}"></span><span class="c-g" data-act="max" data-id="${w.winId}"></span></span><span style="flex:1;text-align:center;opacity:.85">${w.title}</span></div><div class="winbody">${w.html}</div>`;
+el.onpointerdown=(e)=>{if(e.target.dataset.act)return;w.z=++z;renderDesktop();};a.appendChild(el);});
+a.querySelectorAll("[data-act]").forEach(b=>{b.onclick=e=>{e.stopPropagation();const id=b.dataset.id;const w=wins.find(x=>x.winId===id);
+if(b.dataset.act==="close")wins=wins.filter(x=>x.winId!==id);if(b.dataset.act==="min")w.min=true;if(b.dataset.act==="max")w.max=!w.max;renderDesktop();};});
+a.querySelectorAll("[data-drag]").forEach(h=>{h.onpointerdown=e=>{if(e.target.dataset.act)return;const w=wins.find(x=>x.winId===h.dataset.drag);if(w.max)return;w.z=++z;
+const sx=e.clientX-w.x,sy=e.clientY-w.y;const mv=ev=>{w.x=Math.max(0,ev.clientX-sx);w.y=Math.max(0,ev.clientY-sy);const el=h.closest(".win");el.style.left=w.x+"px";el.style.top=w.y+"px";};
+const up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up);renderDesktop();};addEventListener("pointermove",mv);addEventListener("pointerup",up);};h.ondblclick=()=>{const w=wins.find(x=>x.winId===h.dataset.drag);w.max=!w.max;renderDesktop();};});
+renderDock();}
+document.addEventListener("keydown",e=>{const m=(e.metaKey||e.ctrlKey);
+if(m&&e.key.toLowerCase()==="k"){e.preventDefault();$("serverMenu").classList.toggle("hidden");}
+if(m&&e.key===","){e.preventDefault();openApp("settings");}
+if(m&&e.key.toLowerCase()==="w"){const top=[...wins].sort((a,b)=>(b.z||0)-(a.z||0))[0];if(top&&!document.activeElement?.closest?.(".term")){e.preventDefault();wins=wins.filter(w=>w.winId!==top.winId);renderDesktop();}}
+if(e.key==="Escape"){$("serverMenu").classList.add("hidden");}});
+renderServers();
+</script>
+</body>
+</html>

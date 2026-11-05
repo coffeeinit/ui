@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mail (shadcn/ui)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{--background:#fff;--foreground:#09090b;--muted:#f4f4f5;--muted-foreground:#71717a;--border:#e4e4e7;--input:#e4e4e7;--primary:#18181b;--primary-foreground:#fafafa;--accent:#f4f4f5;--ring:#a1a1aa;--destructive:#ef4444;--radius:.5rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--background:#09090b;--foreground:#fafafa;--muted:#27272a;--muted-foreground:#a1a1aa;--border:#27272a;--input:#27272a;--primary:#fafafa;--primary-foreground:#18181b;--accent:#27272a;--ring:#d4d4d8;--destructive:#7f1d1d}}
+:root[data-theme="dark"]{--background:#09090b;--foreground:#fafafa;--muted:#27272a;--muted-foreground:#a1a1aa;--border:#27272a;--input:#27272a;--primary:#fafafa;--primary-foreground:#18181b;--accent:#27272a;--ring:#d4d4d8;--destructive:#7f1d1d}
+*{box-sizing:border-box;margin:0;border-color:var(--border)}
+html,body{height:100%}
+body{font:14px/20px Geist,Inter,ui-sans-serif,system-ui,sans-serif;background:var(--background);color:var(--foreground);-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:0;box-shadow:0 0 0 1px var(--ring)}
+.shell{display:grid;grid-template-columns:minmax(200px,18%) minmax(320px,32%) 1fr;height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0;border-right:1px solid var(--border)}
+.col:last-child{border-right:0}
+.hd{height:52px;display:flex;align-items:center;flex:none}
+.sep{height:1px;background:var(--border);flex:none}
+.vsep{width:1px;height:24px;background:var(--border);margin:0 4px}
+/* account switcher */
+.acct{margin:0 8px;position:relative;flex:1}
+.acct select{appearance:none;width:100%;height:36px;padding:0 32px 0 36px;border:1px solid var(--input);border-radius:var(--radius);background:transparent;box-shadow:0 1px 2px rgba(0,0,0,.05);font-size:14px}
+.acct svg{position:absolute;top:10px;pointer-events:none}
+.acct .l{left:10px}.acct .r{right:10px;opacity:.5}
+/* nav */
+.nav{padding:8px;display:grid;gap:4px}
+.nav button{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:6px;font-weight:500;text-align:left;width:100%}
+.nav button:hover{background:var(--accent)}
+.nav button[aria-current="true"]{background:var(--primary);color:var(--primary-foreground)}
+.nav .n{margin-left:auto;font-size:12px;font-weight:400;opacity:.7}
+/* list */
+.title{font-size:20px;line-height:28px;font-weight:700;padding:0 16px}
+.tabs{margin-left:auto;margin-right:16px;display:inline-flex;height:36px;padding:4px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.tabs button{padding:0 12px;border-radius:6px;font-weight:500;font-size:14px;color:inherit}
+.tabs button[aria-selected="true"]{background:var(--background);color:var(--foreground);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sf{padding:16px;position:relative}
+.sf svg{position:absolute;left:26px;top:26px;color:var(--muted-foreground);width:16px}
+.sf input{width:100%;height:36px;padding:0 12px 0 32px;border:1px solid var(--input);border-radius:6px;background:transparent;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.sf input::placeholder{color:var(--muted-foreground)}
+.items{overflow:auto;flex:1;padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+.item{display:flex;flex-direction:column;gap:8px;align-items:stretch;text-align:left;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px}
+.item:hover{background:var(--accent)}
+.item[aria-selected="true"]{background:var(--muted)}
+.item .top{display:flex;align-items:center;gap:8px}
+.item .name{font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:#2563eb}
+.item .time{margin-left:auto;font-size:12px;color:var(--muted-foreground)}
+.item[aria-selected="true"] .time{color:var(--foreground)}
+.item .subj{font-size:12px;font-weight:500}
+.item .pv{font-size:12px;color:var(--muted-foreground);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.badges{display:flex;gap:8px}
+.badge{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600;line-height:16px}
+.badge.def{background:var(--primary);color:var(--primary-foreground);border-color:transparent}
+.badge.des{background:var(--destructive);color:#fff;border-color:transparent}
+/* display */
+.tools{display:flex;align-items:center;gap:4px;padding:0 8px;height:52px;flex:none}
+.ib{width:36px;height:36px;display:grid;place-items:center;border-radius:6px;color:var(--foreground);position:relative}
+.ib:hover{background:var(--accent)}
+.ib:disabled{opacity:.5;pointer-events:none}
+.sp{flex:1}
+.pop{position:absolute;top:40px;right:0;z-index:5;width:220px;padding:4px;border:1px solid var(--border);border-radius:8px;background:var(--background);box-shadow:0 4px 12px rgba(0,0,0,.12);display:none;text-align:left}
+.pop.on{display:block}
+.pop p{padding:6px 8px;font-size:14px;font-weight:600}
+.pop button{display:flex;width:100%;padding:6px 8px;border-radius:4px;font-size:14px;justify-content:space-between}
+.pop button:hover{background:var(--accent)}
+.pop small{color:var(--muted-foreground)}
+.mh{display:flex;gap:16px;padding:16px;align-items:flex-start;font-size:14px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--muted);display:grid;place-items:center;font-weight:500;flex:none}
+.mh .nm{font-weight:600}.mh .sb{font-size:12px;font-weight:500}.mh .rt{font-size:12px}.mh .rt b{font-weight:500}
+.mh .dt{margin-left:auto;font-size:12px;color:var(--muted-foreground);text-align:right}
+.body{flex:1;overflow:auto;padding:16px;white-space:pre-wrap;font-size:14px}
+.reply{padding:16px;display:grid;gap:16px;flex:none}
+.reply textarea{width:100%;min-height:96px;padding:16px;border:1px solid var(--input);border-radius:6px;background:transparent;resize:none;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.reply textarea::placeholder{color:var(--muted-foreground)}
+.rf{display:flex;align-items:center}
+.rf label{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer}
+.sw{appearance:none;width:36px;height:20px;border-radius:999px;background:var(--input);position:relative;cursor:pointer;transition:background .15s;flex:none}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--background);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.sw:checked{background:var(--primary)}.sw:checked::after{transform:translateX(16px)}
+.send{margin-left:auto;height:32px;padding:0 12px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-weight:500;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.send:hover{opacity:.9}
+.none{padding:32px;text-align:center;color:var(--muted-foreground)}
+.toast{position:fixed;right:16px;bottom:16px;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--background);box-shadow:0 4px 12px rgba(0,0,0,.12);font-weight:500;opacity:0;pointer-events:none;transition:opacity .15s}
+.toast.on{opacity:1}
+.back{display:none}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .col:first-child{display:none}
+  .col{border-right:0}
+  .shell .disp{display:none}
+  .shell.open .disp{display:flex}
+  .shell.open .col.lst{display:none}
+  .back{display:grid}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="col">
+    <div class="hd">
+      <div class="acct">
+        <svg class="l" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <select id="acc" aria-label="Select account"><option>jana@retrotech.example</option><option>hello@blacklovertech.example</option><option>jana@gmail.example</option></select>
+        <svg class="r" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <nav class="nav" id="nav1" aria-label="Folders"></nav>
+    <div class="sep"></div>
+    <nav class="nav" id="nav2" aria-label="Categories"></nav>
+  </aside>
+
+  <section class="col lst" aria-label="Message list">
+    <div class="hd"><h1 class="title" id="ttl">Inbox</h1>
+      <div class="tabs" role="tablist"><button role="tab" data-t="all" aria-selected="true">All mail</button><button role="tab" data-t="unread" aria-selected="false">Unread</button></div>
+    </div>
+    <div class="sep"></div>
+    <div class="sf"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="q" type="search" placeholder="Search" aria-label="Search"></div>
+    <div class="items" id="items"></div>
+  </section>
+
+  <main class="col disp" aria-live="polite">
+    <div class="tools" id="tools"></div>
+    <div class="sep"></div>
+    <div id="view" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const P={
+inbox:'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+send:'<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+archivex:'<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="m9.5 17 5-5"/><path d="m9.5 12 5 5"/>',
+trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+archive:'<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+users:'<path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>',
+alert:'<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+msgs:'<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',
+cart:'<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+reply:'<polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>',
+replyall:'<polyline points="7 17 2 12 7 7"/><polyline points="12 17 7 12 12 7"/><path d="M22 18v-2a4 4 0 0 0-4-4H7"/>',
+fwd:'<polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>',
+more:'<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
+back:'<path d="m15 18-6-6 6-6"/>'};
+const ic=n=>`<svg viewBox="0 0 24 24">${P[n]}</svg>`;
+const N1=[['inbox','Inbox','inbox',128],['drafts','Drafts','file',9],['sent','Sent','send',''],['junk','Junk','archivex',23],['trash','Trash','trash',''],['archive','Archive','archive','']];
+const N2=[['social','Social','users',972],['updates','Updates','alert',342],['forums','Forums','msgs',128],['shopping','Shopping','cart',8],['promotions','Promotions','archive',21]];
+let M=[
+{id:1,f:'inbox',c:'updates',name:'Frappe Cloud',em:'noreply@frappe.io',subj:'Your October invoice is ready',d:'Oct 14, 2026, 9:42:00 AM',t:'about 1 hour ago',u:1,L:['work'],b:'Hi Jana,\n\nYour invoice for October is ready. The total due is ₹4,720 for 2 sites on the Standard plan.\n\nPayment is collected automatically on the 20th. You can update billing details from the dashboard.\n\nRegards,\nFrappe Cloud'},
+{id:2,f:'inbox',c:'',name:'Priya Nair',em:'priya@kottravai.in',subj:'Vendor onboarding flow: questions',d:'Oct 14, 2026, 9:10:00 AM',t:'about 2 hours ago',u:1,L:['important','work'],b:'Hi Jana,\n\nTwo questions on the vendor onboarding screens: should KYC upload be mandatory before the first listing, and can we show payout status on the dashboard?\n\nCould we get a call on Thursday afternoon?\n\nPriya'},
+{id:3,f:'inbox',c:'updates',name:'GitHub',em:'notifications@github.com',subj:'[frappe/pilot] Release v0.9.4',d:'Oct 14, 2026, 8:31:00 AM',t:'about 3 hours ago',u:1,L:['work'],b:'A new release is available for frappe/pilot.\n\nHighlights: faster bench init, fixes for systemd --user detection in containers, and a new database analyzer view.'},
+{id:4,f:'inbox',c:'',name:'Arun Kumar',em:'arun@tvsmadurai.example',subj:'Re: Dealer portal staging link',d:'Oct 13, 2026, 4:12:00 PM',t:'1 day ago',u:0,L:['work'],b:'Thanks, the staging link works. Our team will test the order flow tomorrow and share feedback by evening.\n\nArun'},
+{id:5,f:'inbox',c:'updates',name:'Zerodha Tech',em:'oss@zerodha.example',subj:'Thanks for the dungbeetle PR',d:'Oct 13, 2026, 11:02:00 AM',t:'1 day ago',u:0,L:['personal'],b:'Merged. Thanks for the fix and the clear test case. We will tag a release this week.'},
+{id:6,f:'inbox',c:'forums',name:'NixOS Discourse',em:'noreply@nixos.example',subj:'Weekly digest: 12 new topics',d:'Oct 12, 2026, 7:00:00 AM',t:'2 days ago',u:0,L:[],b:'Top topics this week: rootless containers on NixOS, systemd user units in VMs, and a flake template for Go services.'},
+{id:7,f:'inbox',c:'',name:'Meera S',em:'meera@aramaanalytics.example',subj:'Dashboard colours and chart labels',d:'Oct 12, 2026, 10:20:00 AM',t:'2 days ago',u:0,L:['work','personal'],b:'Hi Jana,\n\nAttached is the revised mockup. The client prefers muted colours and wants chart labels in Tamil and English.\n\nMeera'},
+{id:8,f:'sent',c:'',name:'Priya Nair',em:'priya@kottravai.in',subj:'Re: Vendor onboarding flow: questions',d:'Oct 14, 2026, 9:20:00 AM',t:'about 2 hours ago',u:0,L:['work'],b:'Hi Priya,\n\nKYC before the first listing, yes. Payout status goes on the dashboard in the next release. Thursday 3 PM works.\n\nJana'},
+{id:9,f:'drafts',c:'',name:'Draft',em:'',subj:'Proposal: fractional CTO retainer',d:'Oct 11, 2026, 6:00:00 PM',t:'3 days ago',u:0,L:[],b:'Scope: architecture reviews, hiring support, and a monthly roadmap check-in. Pricing to be added.'},
+{id:10,f:'junk',c:'promotions',name:'Domain Renewal Desk',em:'billing@renew-now.example',subj:'URGENT: your domain expires today',d:'Oct 11, 2026, 2:00:00 AM',t:'3 days ago',u:1,L:[],b:'This message looks like phishing. Do not click any links.'}
+];
+let folder='inbox',cat=null,tab='all',q='',cur=null;
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ini=s=>s.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const bv=l=>l==='work'?'def':l==='important'?'des':'';
+function nav(){
+  const f=(k,n,i,c,isCat)=>`<button data-${isCat?'c':'f'}="${k}" aria-current="${isCat?cat===k:(!cat&&folder===k)}">${ic(i)}${n}<span class="n">${c}</span></button>`;
+  $('#nav1').innerHTML=N1.map(x=>f(...x,false)).join('');
+  $('#nav2').innerHTML=N2.map(x=>f(...x,true)).join('');
+}
+function list(){
+  const v=M.filter(m=>(cat?m.c===cat:m.f===folder)&&(tab==='all'||m.u)&&(!q||(m.name+m.subj+m.b).toLowerCase().includes(q)));
+  const t=cat?N2.find(x=>x[0]===cat)[1]:N1.find(x=>x[0]===folder)[1];
+  $('#ttl').textContent=t;
+  $('#items').innerHTML=v.length?v.map(m=>`<button class="item" data-id="${m.id}" aria-selected="${cur===m.id}">
+   <div class="top"><span class="name">${esc(m.name)}</span>${m.u?'<span class="dot"></span>':''}<span class="time">${m.t}</span></div>
+   <div class="subj">${esc(m.subj)}</div><div class="pv">${esc(m.b.slice(0,300))}</div>
+   ${m.L.length?`<div class="badges">${m.L.map(l=>`<span class="badge ${bv(l)}">${l}</span>`).join('')}</div>`:''}</button>`).join(''):`<div class="none">No messages</div>`;
+}
+function view(){
+  const m=M.find(x=>x.id===cur),off=!m?' disabled':'';
+  $('#tools').innerHTML=`<button class="ib back" id="bk" aria-label="Back">${ic('back')}</button>
+   <button class="ib" data-a="archive" title="Archive"${off}>${ic('archive')}</button>
+   <button class="ib" data-a="junk" title="Move to junk"${off}>${ic('archivex')}</button>
+   <button class="ib" data-a="trash" title="Move to trash"${off}>${ic('trash')}</button>
+   <span class="vsep"></span>
+   <span style="position:relative"><button class="ib" id="snz" title="Snooze"${off}>${ic('clock')}</button>
+    <div class="pop" id="p1" style="left:0;right:auto"><p>Snooze until</p><button data-sn="Later today"><span>Later today</span><small>6:00 PM</small></button><button data-sn="Tomorrow"><span>Tomorrow</span><small>9:00 AM</small></button><button data-sn="This weekend"><span>This weekend</span><small>Sat 9:00 AM</small></button><button data-sn="Next week"><span>Next week</span><small>Mon 9:00 AM</small></button></div></span>
+   <span class="sp"></span>
+   <button class="ib" data-a="reply" title="Reply"${off}>${ic('reply')}</button>
+   <button class="ib" data-a="reply" title="Reply all"${off}>${ic('replyall')}</button>
+   <button class="ib" data-a="fwd" title="Forward"${off}>${ic('fwd')}</button>
+   <span class="vsep"></span>
+   <span style="position:relative"><button class="ib" id="mr" title="More"${off}>${ic('more')}</button>
+    <div class="pop" id="p2"><button data-mo="Marked as unread">Mark as unread</button><button data-mo="Thread starred">Star thread</button><button data-mo="Label added">Add label</button><button data-mo="Thread muted">Mute thread</button></div></span>`;
+  $('#view').innerHTML=m?`<div class="mh"><div class="avatar">${ini(m.name)}</div><div><div class="nm">${esc(m.name)}</div><div class="sb">${esc(m.subj)}</div>${m.em?`<div class="rt"><b>Reply-To:</b> ${esc(m.em)}</div>`:''}</div><div class="dt">${m.d}</div></div>
+   <div class="sep"></div><div class="body">${esc(m.b)}</div><div class="sep"></div>
+   <div class="reply"><textarea id="rt" placeholder="Reply ${esc(m.name)}..." aria-label="Reply"></textarea>
+   <div class="rf"><label><input type="checkbox" class="sw" id="mute"> Mute this thread</label><button class="send" id="sendBtn">Send</button></div></div>`
+   :`<div class="none">No message selected</div>`;
+}
+function render(){nav();list();view()}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),1800)}
+function closePops(){document.querySelectorAll('.pop').forEach(p=>p.classList.remove('on'))}
+document.addEventListener('click',e=>{
+  const o=e.target.closest('#snz,#mr');
+  if(o){const p=$(o.id==='snz'?'#p1':'#p2'),on=p.classList.contains('on');closePops();if(!on)p.classList.add('on');return}
+  const sn=e.target.closest('[data-sn]');if(sn){closePops();toast('Snoozed until '+sn.dataset.sn.toLowerCase());return}
+  const mo=e.target.closest('[data-mo]');if(mo){closePops();toast(mo.dataset.mo);return}
+  closePops();
+  const it=e.target.closest('.item');if(it){cur=+it.dataset.id;const m=M.find(x=>x.id===cur);m.u=0;$('#shell').classList.add('open');render();return}
+  const f=e.target.closest('[data-f]');if(f){folder=f.dataset.f;cat=null;cur=null;render();return}
+  const c=e.target.closest('[data-c]');if(c){cat=c.dataset.c;cur=null;render();return}
+  const t=e.target.closest('[data-t]');if(t){tab=t.dataset.t;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b===t));list();return}
+  const a=e.target.closest('[data-a]');
+  if(a){const m=M.find(x=>x.id===cur);if(!m)return;
+    if(a.dataset.a==='reply'){$('#rt').focus();return}
+    if(a.dataset.a==='fwd'){toast('Forward');return}
+    m.f=a.dataset.a;cur=null;$('#shell').classList.remove('open');render();toast({archive:'Archived',junk:'Moved to junk',trash:'Moved to trash'}[a.dataset.a]);return}
+  if(e.target.closest('#bk')){$('#shell').classList.remove('open');return}
+  if(e.target.closest('#sendBtn')){const r=$('#rt');if(!r.value.trim()){r.focus();return}r.value='';toast('Sent');}
+});
+$('#q').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();list()});
+render();
+</script>
+</body>
+</html>

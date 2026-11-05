@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspace — Notion-style UI</title>
+<style>
+:root{
+ --bg:#fff;--side:#f7f7f5;--panel:#fff;--text:#37352f;--muted:rgba(55,53,47,.65);--faint:rgba(55,53,47,.4);
+ --line:rgba(55,53,47,.09);--line-strong:rgba(55,53,47,.16);--hover:rgba(55,53,47,.08);--active:rgba(55,53,47,.08);
+ --accent:#2383e2;--code-bg:#f7f6f3;--callout:rgba(241,241,239,.8);--sel:rgba(45,170,219,.3);
+ --t-gray:#e3e2e0;--t-gray-t:#32302c;--t-green:#dbeddb;--t-green-t:#1c3829;--t-yellow:#fdecc8;--t-yellow-t:#402c1b;
+ --t-red:#ffe2dd;--t-red-t:#5d1715;--t-purple:#e8deee;--t-purple-t:#412454;
+ --shadow:0 0 0 1px rgba(15,15,15,.05),0 3px 6px rgba(15,15,15,.1),0 9px 24px rgba(15,15,15,.2);
+}
+[data-theme="dark"]{--bg:#191919;--side:#202020;--panel:#252525;--text:rgba(255,255,255,.81);--muted:rgba(255,255,255,.46);--faint:rgba(255,255,255,.28);--line:rgba(255,255,255,.094);--line-strong:rgba(255,255,255,.16);--hover:rgba(255,255,255,.055);--active:rgba(255,255,255,.08);--accent:#2f81c4;--code-bg:#252525;--callout:#252525;--t-gray:#454b4e;--t-gray-t:#ffffffcc;--t-green:#2b4538;--t-green-t:#e3f2e8;--t-yellow:#59482a;--t-yellow-t:#f7e6bd;--t-red:#5c2e2e;--t-red-t:#fbdcd9;--t-purple:#443a5a;--t-purple-t:#e6dcf5;--shadow:0 0 0 1px rgba(255,255,255,.05),0 3px 6px rgba(0,0,0,.3),0 9px 24px rgba(0,0,0,.4)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:16px/1.5 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI Variable Display","Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+::selection{background:var(--sel)}
+button,input,textarea{font:inherit;color:inherit}button{border:0;background:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.app{height:100%;display:grid;grid-template-columns:240px minmax(0,1fr);overflow:hidden}
+
+/* sidebar */
+.sidebar{background:var(--side);display:flex;flex-direction:column;min-width:0;padding:0 0 6px;box-shadow:inset -1px 0 var(--line);overflow:auto;font-size:14px}
+.sb-head{display:flex;align-items:center;gap:2px;padding:8px 8px 6px;flex:none}
+.workspace{display:flex;align-items:center;gap:8px;min-width:0;flex:1;height:30px;padding:0 8px;border-radius:6px;text-align:left;font-weight:600;font-size:14px}
+.workspace:hover,.icon-btn:hover,.nav-item:hover,.page-row:hover,.side-section:hover,.user-row:hover{background:var(--hover)}
+.workspace-logo{width:20px;height:20px;border-radius:4px;background:#37352f;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.workspace-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.workspace-chevron{color:var(--faint);font-size:12px}
+.icon-btn{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--muted);flex:none}
+.sb-group{padding:0 4px;margin-bottom:6px}
+.nav-item,.page-row{width:calc(100% - 8px);margin:0 4px;display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;border-radius:6px;text-align:left;color:var(--muted);min-width:0;font-weight:500}
+.sb-group .nav-item{width:100%;margin:0}
+.nav-item.active,.page-row.active{background:var(--active);color:var(--text);font-weight:600}
+.nav-item svg{width:20px;height:20px;padding:1px;color:var(--muted)}
+.nav-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.nav-count{font-size:12px;color:var(--faint);font-weight:500}
+.side-section{display:flex;align-items:center;margin:0 4px;padding:0 8px;height:26px;border-radius:6px;color:var(--faint);font-size:12px;font-weight:600;margin-top:10px}
+.side-section button{margin-left:auto;color:var(--muted);display:grid;place-items:center;border-radius:4px;padding:0 5px;opacity:0;font-size:15px}
+.side-section:hover button{opacity:1}.side-section button:hover{background:var(--hover)}
+.page-row{padding-left:8px}.page-row>span:first-child{width:20px;text-align:center;font-size:16px;line-height:1}
+.page-row .more{margin-left:auto;opacity:0;color:var(--muted);font-size:14px}.page-row:hover .more{opacity:1}
+.side-bottom{margin-top:auto;padding:10px 4px 0}
+.side-bottom .nav-item{width:100%;margin:0}
+.user-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;width:100%;margin-top:4px;text-align:left}
+.avatar{width:22px;height:22px;border-radius:50%;background:#d7c7b4;color:#5d4937;display:grid;place-items:center;font-size:10px;font-weight:700;flex:none}
+.user-meta{min-width:0;flex:1}.user-meta b{display:block;font-size:13px;font-weight:500;line-height:1.2}.user-meta small{display:block;font-size:11px;color:var(--faint)}
+
+/* top bar */
+.main{min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.topbar{height:45px;display:flex;align-items:center;padding:0 12px;gap:4px;flex:none;font-size:14px}
+.crumbs{display:flex;align-items:center;gap:4px;min-width:0;color:var(--muted)}
+.crumbs span:not(.current){padding:2px 6px;border-radius:4px}.crumbs span:not(.current):hover{background:var(--hover)}
+.crumbs .current{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 6px;border-radius:4px}
+.crumbs .current:hover{background:var(--hover)}.crumbs .sep{color:var(--faint);padding:0 1px}.crumbs #crumbIcon{padding:0 0 0 6px;font-size:16px}
+.top-spacer{flex:1}.saved{font-size:12px;color:var(--faint);white-space:nowrap;padding-right:6px}
+.top-button{height:28px;min-width:28px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:6px;color:var(--text);font-size:14px}
+.top-button:hover{background:var(--hover)}.top-button svg{width:18px;height:18px;color:var(--muted)}.mobile-menu{display:none}
+.content-scroll{overflow:auto;flex:1}
+
+/* page */
+.page{width:100%;padding:0 0 30vh}
+.page-inner{width:min(900px,100%);margin:0 auto;padding:0 96px}
+.page-cover{height:30vh;min-height:150px;max-height:280px;background:linear-gradient(115deg,#e9e2d3,#d9e5dc 48%,#e4d8c8);position:relative;overflow:hidden}
+.page-cover:before,.page-cover:after{content:"";position:absolute;border-radius:50%;opacity:.65}
+.page-cover:before{width:300px;height:180px;background:#b4c9b7;left:14%;top:10px;transform:rotate(-15deg)}
+.page-cover:after{width:360px;height:220px;background:#d0bda4;right:8%;top:30px;transform:rotate(20deg)}
+.cover-controls{position:absolute;right:calc(50% - 450px + 96px);bottom:12px;z-index:1;opacity:0;transition:opacity .15s}
+.page-cover:hover .cover-controls{opacity:1}
+.cover-controls button{background:var(--panel);color:var(--muted);padding:3px 8px;border-radius:4px;font-size:12px;box-shadow:0 0 0 1px var(--line)}
+.page-icon{display:block;font-size:78px;line-height:1.1;margin:0;padding-top:80px;cursor:pointer;width:max-content}
+.has-cover .page-icon{padding-top:0;margin-top:-42px;position:relative}
+.page-title{font-size:40px;line-height:1.2;font-weight:700;margin:8px 0 4px;padding:3px 2px;outline:none;min-height:48px}
+.page-title:empty:before{content:"Untitled";color:var(--faint)}
+.page-subtitle{font-size:16px;color:var(--muted);margin:0 0 10px;padding:3px 2px;outline:none}
+.page-meta{display:flex;align-items:center;gap:14px;color:var(--faint);font-size:13px;margin:0 0 18px;padding:0 2px;flex-wrap:wrap}
+.meta-avatar{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;background:#d7c7b4;color:#5d4937;font-size:9px;font-weight:700}
+.meta-item{display:flex;align-items:center;gap:6px}
+
+/* blocks */
+.block{position:relative;display:flex;margin:1px 0;min-height:24px}
+.block-handle{position:absolute;left:-26px;top:3px;color:var(--faint);opacity:0;cursor:grab;font-size:14px;width:22px;text-align:center;border-radius:4px;line-height:20px}
+.block:hover .block-handle{opacity:1}.block-handle:hover{background:var(--hover)}
+.block-content{min-width:0;flex:1;outline:none;overflow-wrap:anywhere;padding:3px 2px}
+.block-content:empty:before{content:attr(data-placeholder);color:var(--faint);pointer-events:none}
+.h1{font-size:1.875em;font-weight:600;line-height:1.3;margin-top:32px}
+.h2{font-size:1.5em;font-weight:600;line-height:1.3;margin-top:22px}
+.h3{font-size:1.25em;font-weight:600;line-height:1.3;margin-top:16px}
+.para{line-height:1.5;white-space:pre-wrap}
+.bullets,.numbers{margin:0;padding-left:1.6em;line-height:1.5}.bullets li{padding:3px 2px;outline:none}.bullets li::marker{font-size:1.1em}
+.todo{display:flex;align-items:flex-start;gap:8px;line-height:1.5;flex:1;padding:3px 2px;cursor:default}
+.todo .todo-text{padding:0}
+.todo input{appearance:none;-webkit-appearance:none;margin:4px 0 0;width:16px;height:16px;border:2px solid var(--text);border-radius:3px;display:grid;place-items:center;flex:none;cursor:pointer;background:transparent}
+.todo input:checked{background:var(--accent);border-color:var(--accent)}
+.todo input:checked:after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.todo.done .todo-text{text-decoration:line-through;color:var(--faint)}
+.callout{display:flex;gap:10px;flex:1;padding:16px 16px 16px 12px;border-radius:4px;background:var(--callout);box-shadow:0 0 0 1px var(--line);margin:4px 0;line-height:1.5}
+.callout-icon{font-size:1.4em;line-height:1.2}.callout .block-content{padding:0}
+.quote{border-left:3px solid currentColor;padding:0 14px;margin:4px 0;font-size:1.2em;line-height:1.5;color:var(--text)}
+.code{background:var(--code-bg);border-radius:4px;padding:32px 16px;margin:4px 0;font:85% / 1.5 "SFMono-Regular",Menlo,Consolas,"PT Mono","Liberation Mono",Courier,monospace;white-space:pre-wrap;tab-size:2}
+
+/* database table view */
+.table-wrap{overflow:auto;border-top:1px solid var(--line);margin:8px 0;flex:1;min-width:0;padding:0}
+.table-wrap:after{content:"+ New";display:block;padding:7px 10px;color:var(--faint);font-size:14px;border-bottom:1px solid var(--line);cursor:pointer}
+.db-table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+.db-table th,.db-table td{text-align:left;padding:0 10px;height:34px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap}
+.db-table th{font-weight:400;color:var(--muted)}
+.db-table td:last-child,.db-table th:last-child{border-right:0}
+.db-table th:before{content:"≡";margin-right:6px;color:var(--faint);font-size:12px}
+.db-table th:first-child:before{content:"Aa";font-size:11px}.db-table th:nth-child(2):before{content:"◉"}
+.db-table tbody tr:hover td{background:var(--hover)}
+.db-table td:first-child{font-weight:500}
+.status{display:inline-flex;align-items:center;padding:0 6px;border-radius:3px;font-size:14px;line-height:20px;background:var(--t-gray);color:var(--t-gray-t)}
+.status.green{background:var(--t-green);color:var(--t-green-t)}.status.yellow{background:var(--t-yellow);color:var(--t-yellow-t)}
+.status.red{background:var(--t-red);color:var(--t-red-t)}.status.purple{background:var(--t-purple);color:var(--t-purple-t)}
+
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:46px;margin:6px 0;flex:1}
+.column{min-width:0}.column-title{font-weight:600;padding:3px 2px}.column>div:not(.column-title){padding:3px 2px;outline:none}
+.link-card{display:flex;gap:6px;align-items:center;padding:3px 2px;border-radius:4px;cursor:pointer;margin:1px 0}
+.link-card:hover{background:var(--hover)}.link-icon{font-size:20px;width:24px;text-align:center;line-height:1}
+.link-card>span:last-child{display:flex;align-items:baseline;gap:8px;min-width:0}
+.link-card b{font-weight:500;border-bottom:1px solid var(--line-strong);line-height:1.3}.link-card small{color:var(--faint);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.add-block{display:flex;align-items:center;gap:8px;padding:6px 2px;color:var(--faint);font-size:14px;opacity:0;transition:opacity .12s}
+.page-inner:hover .add-block{opacity:1}
+.add-block button{display:flex;align-items:center;gap:5px;color:var(--muted);padding:3px 6px;border-radius:4px}
+.add-block button:hover{background:var(--hover)}.add-block svg{width:16px;height:16px}
+
+/* menus */
+.slash-menu{position:fixed;z-index:30;background:var(--panel);border-radius:10px;box-shadow:var(--shadow);padding:6px 0;width:324px;max-height:min(330px,60vh);overflow:auto;display:none}
+.slash-menu.open{display:block}
+.slash-menu .menu-title{font-size:12px;color:var(--faint);padding:6px 14px 4px;font-weight:500}
+.slash-menu button{display:flex;align-items:center;gap:10px;width:calc(100% - 8px);margin:0 4px;text-align:left;padding:4px 10px;border-radius:6px;font-size:14px;line-height:1.3}
+.slash-menu button:hover{background:var(--hover)}.slash-menu small{color:var(--faint);font-size:12px}
+.slash-menu button span:first-child{width:44px;height:44px;border-radius:4px;box-shadow:0 0 0 1px var(--line);background:var(--bg);display:grid;place-items:center;font-size:15px;flex:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:9px 14px;background:#2f3437;color:#fff;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;box-shadow:var(--shadow)}.toast.show{opacity:1}
+.search-overlay{position:fixed;inset:0;background:rgba(15,15,15,.6);z-index:40;display:none;align-items:flex-start;justify-content:center;padding-top:12vh}.search-overlay.open{display:flex}
+.search-box{width:min(720px,calc(100vw - 30px));background:var(--panel);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.search-input{width:100%;padding:14px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;outline:none;font-size:18px}
+.search-results{padding:6px;max-height:50vh;overflow:auto;font-size:14px}
+.search-result{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 10px;border-radius:6px}
+.search-result:hover{background:var(--hover)}.search-result small{display:block;color:var(--faint);font-size:12px}
+
+@media(max-width:900px){.page-inner{padding:0 32px}.cover-controls{right:32px}}
+@media(max-width:800px){
+ .app{grid-template-columns:1fr}
+ .sidebar{position:fixed;z-index:25;top:0;bottom:0;left:0;width:270px;transform:translateX(-105%);transition:transform .2s;box-shadow:var(--shadow)}.sidebar.open{transform:none}
+ .mobile-menu{display:inline-flex}.topbar{padding:0 8px}.saved{display:none}.page-inner{padding:0 20px}.cover-controls{right:20px}
+ .page-title{font-size:32px}.page-icon{font-size:64px}.columns{grid-template-columns:1fr;gap:12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+ <div class="sb-head">
+  <button class="workspace" id="workspaceMenu"><span class="workspace-logo">J</span><span class="workspace-name">J's Workspace</span><span class="workspace-chevron">⌄</span></button>
+  <button class="icon-btn" id="quickNew" title="New page"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+ </div>
+ <div class="sb-group">
+  <button class="nav-item" id="searchOpen"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="nav-label">Search</span></button>
+  <button class="nav-item" id="aiBtn"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg><span class="nav-label">Ask AI</span></button>
+  <button class="nav-item" id="homeBtn"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-7h6v7"/></svg><span class="nav-label">Home</span></button>
+  <button class="nav-item"><svg viewBox="0 0 24 24"><path d="M4 13V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5M4 13h4l1 2h6l1-2h4"/></svg><span class="nav-label">Inbox</span><span class="nav-count">3</span></button>
+  <button class="nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg><span class="nav-label">Settings</span></button>
+ </div>
+ <div class="side-section">Favorites <button title="Add favorite" id="favAdd">＋</button></div>
+ <button class="page-row" data-page="roadmap"><span>🗺️</span><span class="nav-label">Product roadmap</span><span class="more">···</span></button>
+ <button class="page-row" data-page="notes"><span>📝</span><span class="nav-label">Quick notes</span><span class="more">···</span></button>
+ <div class="side-section">Private <button title="Add a page" id="privateAdd">＋</button></div>
+ <button class="page-row active" data-page="home"><span>🏠</span><span class="nav-label">Getting started</span><span class="more">···</span></button>
+ <button class="page-row" data-page="projects"><span>📁</span><span class="nav-label">Projects</span><span class="more">···</span></button>
+ <button class="page-row" data-page="tasks"><span>☑️</span><span class="nav-label">Task tracker</span><span class="more">···</span></button>
+ <button class="page-row" data-page="meeting"><span>🗒️</span><span class="nav-label">Meeting notes</span><span class="more">···</span></button>
+ <button class="page-row" data-page="wiki"><span>📚</span><span class="nav-label">Engineering wiki</span><span class="more">···</span></button>
+ <div id="newPages"></div>
+ <div class="side-bottom">
+  <button class="nav-item" id="trashBtn"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg><span class="nav-label">Trash</span></button>
+  <button class="user-row" id="userMenu"><span class="avatar">JS</span><span class="user-meta"><b>Janarthanan S</b><small>Personal workspace</small></span></button>
+ </div>
+</aside>
+<main class="main">
+ <header class="topbar">
+  <button class="top-button mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+  <div class="crumbs"><span id="crumbParent">J's Workspace</span><span class="sep">/</span><span id="crumbIcon">🏠</span><span class="current" id="crumbCurrent">Getting started</span></div>
+  <span class="top-spacer"></span><span class="saved" id="saveState">All changes saved</span>
+  <button class="top-button" id="shareBtn">Share</button>
+  <button class="top-button" id="commentsBtn" aria-label="Comments"><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8 8 0 0 1-4-.9L3 20l1.8-4A7 7 0 0 1 4 12c0-4.4 3.6-8 8-8s8 3.1 8 7.5z"/></svg></button>
+  <button class="top-button" id="starBtn" aria-label="Favorite"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>
+  <button class="top-button" id="moreBtn" aria-label="More">···</button>
+ </header>
+ <div class="content-scroll" id="contentScroll"><article class="page" id="page"></article></div>
+</main>
+</div>
+<div class="slash-menu" id="slashMenu"><div class="menu-title">Basic blocks</div>
+ <button data-block="h1"><span>H1</span><span><b>Heading 1</b><br><small>Large section heading</small></span></button>
+ <button data-block="h2"><span>H2</span><span><b>Heading 2</b><br><small>Medium section heading</small></span></button>
+ <button data-block="para"><span>¶</span><span><b>Text</b><br><small>Plain text paragraph</small></span></button>
+ <button data-block="todo"><span>☑</span><span><b>To-do list</b><br><small>Track a task</small></span></button>
+ <button data-block="bullets"><span>•</span><span><b>Bulleted list</b><br><small>Group related points</small></span></button>
+ <button data-block="callout"><span>✦</span><span><b>Callout</b><br><small>Highlight useful information</small></span></button>
+ <button data-block="quote"><span>❞</span><span><b>Quote</b><br><small>Emphasise a passage</small></span></button>
+ <button data-block="code"><span>&lt;/&gt;</span><span><b>Code</b><br><small>Show a code snippet</small></span></button>
+</div>
+<div class="search-overlay" id="searchOverlay"><div class="search-box"><input class="search-input" id="searchInput" placeholder="Search pages..." autocomplete="off"><div class="search-results" id="searchResults"></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const icons={
+ page:'<svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg>',
+ plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+};
+const templates={
+ home:{icon:'🏠',title:'Getting started',subtitle:'A home for your projects, notes, and ideas. Make this workspace your own.',cover:true,blocks:[
+ {type:'h2',text:'Welcome to your workspace'},
+ {type:'para',text:'Use this page as a starting point. Capture ideas, organise your work, and link related information in one place.'},
+ {type:'callout',icon:'💡',text:'Tip: Type / in an editable block to add a content block. Click any text to edit it.'},
+ {type:'h2',text:'Your workspace at a glance'},
+ {type:'columns',items:[
+  {title:'🧭 Plan your work',text:'Keep projects clear, track next steps, and record decisions.'},
+  {title:'📚 Build your knowledge',text:'Store technical notes, reference material, and reusable checklists.'}
+ ]},
+ {type:'h2',text:'Quick links'},
+ {type:'links',items:[
+  {icon:'📁',title:'Projects',desc:'Active work, milestones, and project notes',page:'projects'},
+  {icon:'☑️',title:'Task tracker',desc:'Priorities, owners, and due dates',page:'tasks'},
+  {icon:'🗒️',title:'Meeting notes',desc:'Decisions and follow-up actions',page:'meeting'},
+  {icon:'📚',title:'Engineering wiki',desc:'Architecture, operations, and runbooks',page:'wiki'}
+ ]},
+ {type:'h2',text:'Today'},
+ {type:'todo',text:'Review current project priorities',checked:false},
+ {type:'todo',text:'Capture open questions and blockers',checked:false},
+ {type:'todo',text:'Update the next milestone',checked:true},
+ {type:'para',text:'Add your own blocks below. This mockup keeps edits in the current browser session.'}
+ ]},
+ projects:{icon:'📁',title:'Projects',subtitle:'A simple home for project status, priorities, and next steps.',blocks:[
+ {type:'h2',text:'Active projects'},
+ {type:'para',text:'Use this database-style table as a visual reference for project tracking.'},
+ {type:'table',headers:['Project','Status','Priority','Target'],rows:[
+ ['Porter PaaS','In progress','High','Nov 2026'],['ERPNext monitoring','Planning','High','Oct 2026'],['Portfolio refresh','In progress','Medium','Nov 2026'],['Notion UI reference','In progress','Medium','Oct 2026']
+ ]},
+ {type:'h2',text:'Project template'},
+ {type:'todo',text:'Write the problem statement',checked:true},
+ {type:'todo',text:'Define scope and success criteria',checked:false},
+ {type:'todo',text:'List dependencies and risks',checked:false},
+ {type:'todo',text:'Record milestones and decisions',checked:false},
+ {type:'callout',icon:'📌',text:'Keep one clear source of truth for each project. Link meeting notes and technical decisions to the project page.'}
+ ]},
+ tasks:{icon:'☑️',title:'Task tracker',subtitle:'A lightweight task list for priorities and follow-up.',blocks:[
+ {type:'h2',text:'This week'},
+ {type:'table',headers:['Task','Status','Priority','Area'],rows:[
+ ['Finish Notion UI reference','In progress','High','Design'],['Review Frappe app choices','To do','Medium','ERPNext'],['Test local dev-bench','To do','High','Development'],['Update project notes','Done','Low','Planning']
+ ]},
+ {type:'h2',text:'Personal task list'},
+ {type:'todo',text:'Choose the next UI pattern to study',checked:false},
+ {type:'todo',text:'Record reusable layout rules',checked:false},
+ {type:'todo',text:'Test the layout at mobile width',checked:false}
+ ]},
+ meeting:{icon:'🗒️',title:'Meeting notes',subtitle:'Record the context, decisions, and actions from each discussion.',blocks:[
+ {type:'h2',text:'Meeting details'},
+ {type:'table',headers:['Field','Value'],rows:[['Date','14 October 2026'],['Attendees','Project team'],['Topic','UI reference planning']]},
+ {type:'h2',text:'Agenda'},
+ {type:'bullets',items:['Review current UI references','Agree on common layout patterns','Identify reusable components']},
+ {type:'h2',text:'Decisions'},
+ {type:'para',text:'Use a consistent visual system. Keep each mockup self-contained and easy to open in a browser.'},
+ {type:'h2',text:'Action items'},
+ {type:'todo',text:'Build the Notion-style reference',checked:false},
+ {type:'todo',text:'Compare the page and database layouts',checked:false},
+ {type:'todo',text:'Record follow-up changes',checked:false}
+ ]},
+ wiki:{icon:'📚',title:'Engineering wiki',subtitle:'Technical documentation, architecture notes, and operational guides.',blocks:[
+ {type:'h2',text:'Documentation index'},
+ {type:'links',items:[
+ {icon:'🏗️',title:'Architecture',desc:'System boundaries, components, and data flow',page:'wiki'},
+ {icon:'🚀',title:'Deployment runbook',desc:'Build, deploy, verify, and roll back',page:'wiki'},
+ {icon:'🔐',title:'Security checklist',desc:'Access, secrets, updates, and backups',page:'wiki'}
+ ]},
+ {type:'h2',text:'Documentation principles'},
+ {type:'bullets',items:['Explain the purpose before the steps.','Use short, direct instructions.','Record tested commands and expected results.','Keep decisions and dates visible.']},
+ {type:'callout',icon:'🛠️',text:'Reference content only: these example pages do not connect to a backend or external service.'}
+ ]},
+ roadmap:{icon:'🗺️',title:'Product roadmap',subtitle:'A simple view of planned work and progress.',blocks:[
+ {type:'h2',text:'Now / Next / Later'},
+ {type:'table',headers:['Initiative','Window','Status','Outcome'],rows:[
+ ['UI reference library','Now','In progress','Reusable design patterns'],['Developer workflow','Now','Planning','Faster local iteration'],['Shared component system','Next','To do','Consistent application UI'],['Persistent workspace data','Later','Backlog','Save and sync content']
+ ]},
+ {type:'h2',text:'Guidelines'},
+ {type:'bullets',items:['Keep each initiative tied to a clear outcome.','Review priorities when constraints change.','Do not treat sample dates as commitments.']}
+ ]},
+ notes:{icon:'📝',title:'Quick notes',subtitle:'An inbox for ideas that need a home later.',blocks:[
+ {type:'h2',text:'Capture'},
+ {type:'para',text:'Write a rough idea here first. Organise it after you understand what it needs.'},
+ {type:'todo',text:'Collect useful UI patterns',checked:false},
+ {type:'todo',text:'Record interaction details',checked:false},
+ {type:'todo',text:'Move useful notes into the relevant project',checked:false},
+ {type:'quote',text:'Good interfaces make the next action easy to find.'}
+ ]}
+};
+let current='home',customPages=[],counter=0;
+const $=s=>document.querySelector(s);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function blockHTML(b,i){
+ const ed='contenteditable="true" spellcheck="false"';
+ if(b.type==='h1'||b.type==='h2'||b.type==='h3'||b.type==='para')return `<div class="block"><span class="block-handle" title="Block">⠿</span><div class="block-content ${b.type}" ${ed} data-placeholder="${b.type==='para'?'Type something…':'Heading'}">${esc(b.text||'')}</div></div>`;
+ if(b.type==='todo')return `<div class="block"><span class="block-handle">⠿</span><label class="todo ${b.checked?'done':''}"><input type="checkbox" ${b.checked?'checked':''}><span class="todo-text block-content" ${ed}>${esc(b.text)}</span></label></div>`;
+ if(b.type==='bullets')return `<div class="block"><span class="block-handle">⠿</span><ul class="bullets block-content">${b.items.map(x=>`<li ${ed}>${esc(x)}</li>`).join('')}</ul></div>`;
+ if(b.type==='callout')return `<div class="block"><span class="block-handle">⠿</span><div class="callout"><span class="callout-icon">${b.icon||'💡'}</span><div class="block-content" ${ed}>${esc(b.text)}</div></div></div>`;
+ if(b.type==='quote')return `<div class="block"><span class="block-handle">⠿</span><blockquote class="quote block-content" ${ed}>${esc(b.text)}</blockquote></div>`;
+ if(b.type==='code')return `<div class="block"><span class="block-handle">⠿</span><pre class="code block-content" ${ed}>${esc(b.text||'// Add code here')}</pre></div>`;
+ if(b.type==='table')return `<div class="block"><span class="block-handle">⠿</span><div class="table-wrap block-content"><table class="db-table"><thead><tr>${b.headers.map(x=>`<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r=>`<tr>${r.map((x,j)=>`<td>${j===1?statusHTML(x):esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+ if(b.type==='columns')return `<div class="block"><span class="block-handle">⠿</span><div class="columns block-content">${b.items.map(x=>`<div class="column"><div class="column-title">${esc(x.title)}</div><div ${ed}>${esc(x.text)}</div></div>`).join('')}</div></div>`;
+ if(b.type==='links')return `<div class="block"><span class="block-handle">⠿</span><div class="block-content">${b.items.map(x=>`<div class="link-card" data-page="${x.page}"><span class="link-icon">${x.icon}</span><span><b>${esc(x.title)}</b><small>${esc(x.desc)}</small></span></div>`).join('')}</div></div>`;
+ return '';
+}
+function statusHTML(x){let c=/done/i.test(x)?'green':/progress/i.test(x)?'yellow':/high/i.test(x)?'red':/planning|next/i.test(x)?'purple':'';return `<span class="status ${c}">${esc(x)}</span>`}
+function getPage(id){return templates[id]||customPages.find(p=>p.id===id)||templates.home}
+function renderPage(id){
+ current=id;const d=getPage(id);
+ $('#crumbCurrent').textContent=d.title;$('#crumbIcon').textContent=d.icon||'📄';document.title=d.title+' — Workspace reference';
+ document.querySelectorAll('.page-row').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ const blocks=d.blocks.map(blockHTML).join('');
+ $('#page').innerHTML=`${d.cover?'<div class="page-cover"><div class="cover-controls"><button id="changeCover">Change cover</button></div></div>':''}<div class="page-inner ${d.cover?'has-cover':''}"><span class="page-icon" id="pageIcon" title="Change icon">${d.icon||'📄'}</span><h1 class="page-title" contenteditable="true" spellcheck="false" id="pageTitle">${esc(d.title)}</h1><p class="page-subtitle" contenteditable="true" spellcheck="false">${esc(d.subtitle||'Add a description…')}</p><div class="page-meta"><span class="meta-item"><span class="meta-avatar">JS</span>Janarthanan S</span><span class="meta-item">✎ Edited just now</span><span class="meta-item">◷ 5 min read</span></div><div id="blocks">${blocks}</div><div class="add-block"><button id="addBlock">${icons.plus} Add a block</button><span>or type <b>/</b> for commands</span></div></div>`;
+ $('#contentScroll').scrollTop=0;
+ $('#page').querySelectorAll('[contenteditable="true"]').forEach(el=>el.addEventListener('input',()=>{$('#saveState').textContent='Unsaved changes';}));
+ $('#page').querySelectorAll('.todo input').forEach(el=>el.addEventListener('change',()=>{el.closest('.todo').classList.toggle('done',el.checked);toast('Task updated');}));
+}
+function allPages(){return [...Object.entries(templates).map(([id,p])=>({id,title:p.title,icon:p.icon,subtitle:p.subtitle})),...customPages]}
+function addPage(){
+ const id='custom-'+(++counter),title='Untitled';
+ customPages.push({id,title,icon:'📄',subtitle:'Add a description…',blocks:[{type:'para',text:''}]});
+ const row=document.createElement('button');row.className='page-row';row.dataset.page=id;row.innerHTML='<span>📄</span><span class="nav-label">Untitled</span><span class="more">···</span>';$('#newPages').append(row);bindPageButton(row);renderPage(id);$('#pageTitle').focus();const r=document.createRange();r.selectNodeContents($('#pageTitle'));window.getSelection().removeAllRanges();window.getSelection().addRange(r);
+}
+function bindPageButton(b){b.addEventListener('click',()=>renderPage(b.dataset.page))}
+document.querySelectorAll('.page-row').forEach(bindPageButton);
+function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1800)}
+$('#quickNew').addEventListener('click',addPage);$('#privateAdd').addEventListener('click',addPage);$('#favAdd').addEventListener('click',()=>toast('Choose a page, then use the page menu to add it to favourites.'));
+$('#mobileMenu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+$('#page').addEventListener('click',e=>{
+ const p=e.target.closest('[data-page]');if(p){renderPage(p.dataset.page);$('#sidebar').classList.remove('open');return}
+ if(e.target.id==='changeCover'){const covers=['linear-gradient(115deg,#e9e2d3,#d9e5dc 48%,#e4d8c8)','linear-gradient(115deg,#d9e4f5,#e9d6e8 50%,#e6ddc7)','linear-gradient(115deg,#d9eadf,#d4e4ef 50%,#f1dfd0)','linear-gradient(115deg,#ead6c6,#e8e0bd 50%,#cbded0)'];const cover=$('.page-cover');cover.style.background=covers[Math.floor(Math.random()*covers.length)];return}
+ if(e.target.id==='pageIcon'){const icons=['📄','🧠','🚀','📚','🗂️','💡','📝','🎯','🌱','⚙️'];const i=icons.indexOf(e.target.textContent);e.target.textContent=icons[(i+1)%icons.length];}
+ if(e.target.closest('#addBlock'))openSlashMenu(e.target.closest('#addBlock'));
+});
+$('#page').addEventListener('keydown',e=>{if(e.key==='/'&&e.target.isContentEditable){e.preventDefault();openSlashMenu(e.target)}if(e.key==='Escape')$('#slashMenu').classList.remove('open');});
+function openSlashMenu(target){const m=$('#slashMenu');const r=target.getBoundingClientRect();m.style.left=Math.min(r.left,window.innerWidth-255)+'px';m.style.top=Math.min(r.bottom+5,window.innerHeight-350)+'px';m.classList.add('open');m.dataset.target=target.classList.contains('block-content')?'block':'add';}
+$('#slashMenu').addEventListener('click',e=>{const b=e.target.closest('[data-block]');if(!b)return;const type=b.dataset.block,container=$('#blocks');const wrap=document.createElement('div');wrap.innerHTML=blockHTML({type,text:type==='callout'?'Add a useful note here.':type==='code'?'// Add code here':'',icon:'💡',checked:false,items:type==='bullets'?['New item']:undefined},0);const add=$('.add-block');container.append(wrap.firstElementChild);$('#slashMenu').classList.remove('open');const target=container.lastElementChild?.querySelector('[contenteditable="true"]');if(target)target.focus();$('#saveState').textContent='Unsaved changes';});
+document.addEventListener('click',e=>{if(!e.target.closest('#slashMenu')&&!e.target.closest('#addBlock'))$('#slashMenu').classList.remove('open');});
+$('#searchOpen').addEventListener('click',openSearch);document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch()}if(e.key==='Escape')$('#searchOverlay').classList.remove('open')});
+function openSearch(){$('#searchOverlay').classList.add('open');$('#searchInput').value='';renderSearch('');$('#searchInput').focus()}
+function renderSearch(q){const results=allPages().filter(p=>(p.title+' '+(p.subtitle||'')).toLowerCase().includes(q.toLowerCase()));$('#searchResults').innerHTML=results.map(p=>`<button class="search-result" data-result="${p.id}"><span>${p.icon||'📄'}</span><span>${esc(p.title)}<small>${esc(p.subtitle||'Workspace page')}</small></span></button>`).join('')||'<div style="padding:18px;color:var(--muted)">No matching pages</div>'}
+$('#searchInput').addEventListener('input',e=>renderSearch(e.target.value));$('#searchResults').addEventListener('click',e=>{const b=e.target.closest('[data-result]');if(b){renderPage(b.dataset.result);$('#searchOverlay').classList.remove('open')}});
+$('#searchOverlay').addEventListener('click',e=>{if(e.target===$('#searchOverlay'))$('#searchOverlay').classList.remove('open')});
+$('#shareBtn').addEventListener('click',()=>toast('Share panel — UI reference only'));$('#commentsBtn').addEventListener('click',()=>toast('Comments panel — UI reference only'));$('#moreBtn').addEventListener('click',()=>toast('Page menu — UI reference only'));$('#workspaceMenu').addEventListener('click',()=>toast('Workspace switcher — UI reference only'));$('#userMenu').addEventListener('click',()=>toast('Account menu — UI reference only'));$('#trashBtn').addEventListener('click',()=>toast('Trash is empty in this mockup.'));
+document.addEventListener('input',e=>{if(e.target.matches('[contenteditable="true"]'))$('#saveState').textContent='Unsaved changes';});
+document.addEventListener('focusout',e=>{if(e.target.matches('[contenteditable="true"]'))$('#saveState').textContent='All changes saved';});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#sidebar').classList.remove('open')});
+$('#homeBtn').addEventListener('click',()=>renderPage('home'));$('#aiBtn').addEventListener('click',()=>toast('Ask AI — UI reference only'));$('#starBtn').addEventListener('click',e=>{const b=e.currentTarget;const on=b.classList.toggle('on');b.querySelector('svg').style.fill=on?'#e8b33a':'none';b.querySelector('svg').style.stroke=on?'#e8b33a':'';toast(on?'Added to Favorites':'Removed from Favorites')});
+renderPage('home');
+</script>
+</body>
+</html>
+
